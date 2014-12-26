@@ -6,6 +6,6 @@
 
 {% macro BibFullInfo(pretext, entry) %}
 <div class="bibinfo">
-<span class="bi_pretext">{{pretext}}</span> <span class="bi_entry">{{local._bibdata.ANY.content[entry].bib_full[language]}}</span>
+<span class="bi_pretext">{{pretext}}</span> <span class="bi_entry">{{local._bibdata.get_variant('ANY').content[entry].bib_full[language]}}</span>
 </div>
 {% endmacro %}

@@ -55,3 +55,50 @@ twoletter = [
     "YO", "ZH", "ZL", "ZU"
 ]
 twoletter_set = set(twoletter)
+
+
+def narrow_match(requested, available):
+    """Finds the best match for the requested language in a set of available
+    languages.
+
+    Raises a KeyError if no match was found.
+    Raises a ValueError if no languages are available at all.
+    """
+    assert requested == 'ANY' or len(requested) in [2, 5], \
+        str(requested) + " is not a valid language code!"
+    if not available:
+        raise ValueError("No variants available!")
+    if requested in available:
+        return requested
+    if 'ANY' in available:
+        return 'ANY'
+    if requested == 'ANY':
+        av_list = list(available)
+        av_list.sort()
+        return av_list[0]
+    if len(requested) > 2:
+        reduced_requested = requested[0:2].upper()
+        reduced_available = {av[0:2].upper(): av for av in available
+                             if av != 'ANY'}
+        if reduced_requested in reduced_available:
+            return reduced_available[reduced_requested]
+    raise KeyError("No match for {0!s} in {1!s}".format(requested, available))
+
+
+def match(requested, available, substitution_list):
+    """Finds the best match for the requested language in a set of available
+    languages, but allows to pick a substitute if not match was found.
+
+    Raises a KeyError if not even an item from the substitution list is matches
+    (narrowly) the available languages.
+    """
+    try:
+        return narrow_match(requested, available)
+    except KeyError:
+        for substitute in substitution_list:
+            try:
+                return narrow_match(substitute, available)
+            except KeyError:
+                pass
+    raise KeyError("No match found for {0!s} or any of {1!s} in {2!s}".format(
+                   requested, substitution_list, available))

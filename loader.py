@@ -7,15 +7,14 @@ __update__ = "2014-12-06"
 
 import os
 import warnings
+
+import jinja2
 import markdown
 import yaml
-import jinja2
 
+from bibloader import bibtex_loader
 import locale_strings
 import sitetree
-from bibloader import bibtex_loader
-
-
 warnings.simplefilter('always')
 
 
@@ -52,6 +51,8 @@ class CustomJinja2Loader(jinja2.FileSystemLoader):
         self.data = data
 
     def get_source(self, environment, template):
+        print(">>> " + template, environment.globals)
+        # assert False
         if template:
             return jinja2.FileSystemLoader.get_source(self, environment,
                                                       template)
@@ -66,8 +67,9 @@ def jinja2_loader(data, metadata):
     if "config" in metadata and "template_path" in metadata["config"]:
         templ_path = metadata["config"]["template_path"]
     env = jinja2.Environment(loader=CustomJinja2Loader(data, templ_path))
+    env.globals.update(metadata)
     templ = env.get_template("")
-    result = templ.render(metadata)
+    result = templ.render()  # metadata)
     return result
 
 
@@ -87,33 +89,28 @@ def gen_chainloader(loader_list):
     return chainloader
 
 
-class MalformedFile(Exception):
-    HEADER_DATA_MISMATCH = "Wrong number of headers"
-    LANGUAGE_INFO_MISSING = "Language info missing the chunk header"
-
-
 def extract_locale(filepath):
-    """Extracts locale information from filename or parent directory. 
+    """Extracts locale information from filename or parent directory.
     Returns locale string or 'any'.
 
     Locale information is assumed to reside at the end of the basename of the
     file, right before the extension. It must either have the form "_xx_XX" or
     "_XX", eg. "_de_DE" or simply "_DE", and represent a valid locale.
-    
+
     If no locale information is found in the file name the names of the parent
     directory are checked inward out for locale information.
-    
+
     An error is reported, if there appears to be locale information
     but if it is malformed.
-    
-    'any' is returned if no (intended) locale information seems to be 
-    present in the filename or any of the parent directories' names. 
+
+    'any' is returned if no (intended) locale information seems to be
+    present in the filename or any of the parent directories' names.
     """
-    
+
     def get_locale(name):
         L = len(name)
         if L > 4 and name[-4].upper() == "_ANY":
-            return 'ANY' 
+            return 'ANY'
         if L > 6 and name[-6] == "_" and name[-3] == "_":
             lc = name[-5:]
             if lc in locale_strings.fourletter_set:
@@ -128,8 +125,8 @@ def extract_locale(filepath):
             elif lc.isalpha():
                 raise ValueError("Unrecognized locale %s in filename %s" %
                                  (lc, filepath))
-        return 'nope'         
-    
+        return 'nope'
+
     parent, path = os.path.split(filepath)
     while path:
         basename = os.path.splitext(path)[0]
@@ -139,7 +136,7 @@ def extract_locale(filepath):
         parent, path = os.path.split(parent)
     return 'ANY'
 
-      
+
 def fullpath(path, root):
     """Returns the path starting from path root. Raises an error if root is
     not the beginning of the absolute path of the path."""
@@ -147,8 +144,14 @@ def fullpath(path, root):
     if abspath.startswith(root):
         return abspath[len(root):]
     else:
-        raise ValueError(("Mismatch between supposed root:\n%s\nand " + 
+        raise ValueError(("Mismatch between supposed root:\n%s\nand " +
                           "absolute path:\n%s") % (root, abspath))
+
+
+class MalformedFile(Exception):
+    HEADER_DATA_MISMATCH = "Wrong number of headers"
+    END_MARKER_MISSING = "No end marker for last header"
+    LANGUAGE_INFO_MISSING = "Language info missing in chunk header"
 
 
 def load(filepath,
@@ -233,6 +236,9 @@ def load(filepath,
     data_chunks = []
     with open(filepath, "r") as f:
         line = f.readline()
+        # skip leading empty lines
+        while line and not line.rstrip():
+            line = f.readline()
         while line:
             if line.rstrip() == delimiter:
                 # process yaml header
@@ -241,10 +247,13 @@ def load(filepath,
                 while line and line.rstrip() != delimiter:
                     header.append(line)
                     line = f.readline()
+                if not line:
+                    raise MalformedFile(MalformedFile.END_MARKER_MISSING)
                 line = f.readline()
-                if line == delimiter:
-                    # add empty data block if next header directly follows
-                    data_chunks.append([""])
+                # add empty data block if next header directly follows
+                # or if end of file is reached after delimiter
+                if not line or line.rstrip() == delimiter:
+                    data_chunks.append("")
                 metadata_headers.append("".join(header))
             else:
                 # process markup chunk
@@ -253,12 +262,9 @@ def load(filepath,
                     chunk.append(line)
                     line = f.readline()
                 data_chunks.append("".join(chunk))
-
-    if len(metadata_headers) > len(data_chunks):
-        raise MalformedFile(MalformedFile.HEADER_DATA_MISMATCH + "\n" +
-                            yaml.dump({'headers': metadata_headers,
-                                       'content': data_chunks}))
-    elif len(metadata_headers) < len(data_chunks):
+    if not data_chunks:
+        data_chunks.append("")
+    if len(metadata_headers) < len(data_chunks):
         metadata_headers.insert(0, "")
 
     page = sitetree.Entry()
@@ -287,7 +293,7 @@ def load(filepath,
             }
             page[metadata["language"]] = variant
     if not page:
-        site_path = injected_metadata.get('config', {}).get('site_path', '')         
+        site_path = injected_metadata.get('config', {}).get('site_path', '')
         lang = extract_locale(fullpath(filepath, site_path))
         page[lang] = {'metadata': common_metadata,
                       'content': data_loader(common_data, common_metadata)}
@@ -295,7 +301,7 @@ def load(filepath,
     return page
 
 
-def scan_directory(path, loaders, config={}):
+def scan_directory(path, loaders, injected_metadata):
     """Reads all files in the directory path for which a loader is given
     for at least the last extension.
 
@@ -322,8 +328,7 @@ def scan_directory(path, loaders, config={}):
         path (string): the directory to be scanned
         loaders (dict): A mapping file extension -> loader function.
                         see load_and_split()
-        config (dict): Configuration data that will be added to the metadata
-                       under the key "config"
+        injected_metadata (dict): metadata that can be accessed from templates
     Returns:
         An OrderedDict mapping the basenames of each processed file to the
         contents as returned by the load_and_split() function.
@@ -353,10 +358,15 @@ def scan_directory(path, loaders, config={}):
                 ext = ""
         if chain:
             print("Loading file %s" % filename)
+            metadata = {'basename': basename, 'local': pages}
+            for key in metadata:
+                if key in injected_metadata:
+                    raise ValueError(("Keys {0!s} not allowed in injected " +
+                                      " metadata. Stuck on key {1!s}").format(
+                                     metadata.keys(), key))
+            metadata.update(injected_metadata)
             pages[basename] = load(filename, gen_chainloader(chain),
-                                   injected_metadata={'basename': basename,
-                                                      'local': pages,
-                                                      'config': config})
+                                   injected_metadata=metadata)
             # local access to local data only during loading!
             for lang in pages[basename]:
                 del pages[basename][lang]['metadata']['local']
@@ -367,23 +377,24 @@ def scan_directory(path, loaders, config={}):
 
 def test_load_and_split():
     old_dir = os.getcwd()
-    os.chdir("../_philosophy")
+    os.chdir("tests/testdata")
     bibdata = load("_bibdata.bib", bibtex_loader)
     result = load("Kants_Friedensschrift.md.jinja2",
                   gen_chainloader([jinja2_loader, markdown_loader]),
                   injected_metadata={'basename': "Kants_Friedensschrift",
                                      'local': {"_bibdata": bibdata},
-                                     'config': {"template_path": "../__schnelleseite"}})
+                                     'config': {"template_path":
+                                                "../../"}})
     for lang in result:
         print(result[lang]['content'])
     os.chdir(old_dir)
 
 
-def test_scan_directory(config={}):
+def test_scan_directory(metadata):
     tree = scan_directory("./", {".md": markdown_loader,
                                  ".jinja2": jinja2_loader,
                                  ".bib": bibtex_loader},
-                          config)
+                          metadata)
     for lang in ["DE", "EN"]:
         with open("output_%s.html" % lang, "w") as out:
             out.write(
