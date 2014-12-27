@@ -52,10 +52,8 @@ class Entry(dict):
     def __setitem__(self, key, value):
         """Guarded __setitem__ to ensure that only valid entry data is added
         to the dictionary."""
-        if not (key in locale_strings.fourletter_set or
-                key in locale_strings.twoletter_set or key.upper() == 'ANY'):
-            raise ValueError("%s is not a valid locale string" % key)
-        elif not isinstance(value, collections.Mapping):
+        locale_strings.valid_locale(key, raise_error=True)
+        if not isinstance(value, collections.Mapping):
             raise ValueError("Not a dictionary: %s" % str(value))
         elif set(value.keys()) != {'metadata', 'content'}:
             illegal_keys = set(value.keys()) - {'metadata', 'content'}
@@ -97,7 +95,7 @@ class Entry(dict):
         a data dictionary."""
         return self.__content_type == "data"
 
-    def get_variant(self, lang):
+    def bestmatch(self, lang):
         """Returns a specific language version of the entry or an acceptable
         substitute, if the the preferred language version is not available.
 
@@ -110,23 +108,11 @@ class Entry(dict):
             raise error
         return self[key]
 
-#         if lang in self:
-#             return self[lang]
-#         elif len(self):
-#             for sub in self.language_substitutes:
-#                 if sub in self:
-#                     return self[sub]
-#                 if sub.upper() == 'ANY':
-#                     all_keys = list(self.keys())
-#                     all_keys.sort()
-#                     return self[all_keys[0]]
-#         raise KeyError("{0!s} not in {1!s} nor in {2!s}".format(
-#                        lang, self.keys(), self.language_substitutes))
-
 
 class Folder(collections.OrderedDict):
 
-    """An ordered dictionary that contains (Sub-)Folders and Entries.
+    """An ordered dictionary that contains (Sub-)Folders and Entries and
+    optionally a reference to a parent folder, e.g. folder['__parent']
     """
 
     def __setitem__(self, key, value, *args):
@@ -138,7 +124,7 @@ class Folder(collections.OrderedDict):
                              (key, type(value)))
 
     def entries(self):
-        """Returns a generator that yield all pages or data entries in the
+        """Returns a generator that yields all pages or data entries in the
         folder but no sub-folders."""
         return (entry for entry in self.keys()
                 if not isinstance(self[entry], Folder))
@@ -146,4 +132,52 @@ class Folder(collections.OrderedDict):
     def subfolders(self):
         """Returns a generator that yield all subfolders."""
         return (entry for entry in self.keys()
-                if isinstance(self[entry], Folder))
+                if isinstance(self[entry], Folder) and entry != "__parent")
+
+
+##############################################################################
+#
+# special functions for retrieving data
+#
+##############################################################################
+
+class MissingItemError(KeyError):
+
+    """A special kind of key error."""
+
+
+def getitem(key, folder, source, lang):
+    """Retrieve the value assigned to 'key' from the entry that is stored in
+    'folder' under the name 'source' in the language version 'lang' (or a
+    best match for 'lang' as a fallback option).
+
+    Example: getitem(folder, "transtable", "DE", "save file")
+
+    Raises MissingItemError in case 'key' is not found in the entry.
+    An ordinary KeyError is raised if either 'source' is not found in 'folder'
+    or there is no best match for 'lang' in 'source'.
+    """
+    entry = folder[source].bestmatch(lang)['content']
+    try:
+        value = entry[key]
+    except KeyError:
+        raise MissingItemError(key)
+    return value
+
+
+def cascaded_getitem(key, folder, source, lang):
+    """Retrieve the value assigned to 'key' from the entry that is stored in
+    'folder' or any parent folder of 'folder' under the name 'source' in the
+    language version 'lang'.
+
+    Other than getitem, cascaded_getitem continues the search for key in
+    databases with the same name in the parent folders (going inside out).
+    """
+    try:
+        value = getitem(key, folder, source, lang)
+    except MissingItemError:
+        if '__parent' in folder:
+            value = cascaded_getitem(key, folder, source, lang)
+        else:
+            raise KeyError(key)
+    return value

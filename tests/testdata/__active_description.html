@@ -1,6 +1,6 @@
 {% macro Description() %}
 <div class="material">
-(<span class="pseudolink" id="{{basename}}" onMouseOver="showAbstract('{{basename}}');" onMouseOut="hideAbstract();">{% if language == 'DE' %}Inhalt{% else %}Abstract{% endif %}</span>{% for item in material %}; <a href="{{item[1]}}">{{item[0]}}</a>{% endfor %})
+(<span class="pseudolink" id="{{basename}}" onMouseOver="showAbstract('{{basename}}');" onMouseOut="hideAbstract();">{{'Abstract'|TR}}</span>{% for item in material %}; <a href="{{item[1]}}">{{item[0]}}</a>{% endfor %})
 </div>
 <div class="abstract" id="{{basename}}_abstract">
   {{ caller() }}

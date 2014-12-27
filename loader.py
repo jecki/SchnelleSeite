@@ -1,10 +1,9 @@
 """loader.py -- loader for markup text
 """
-
-
-__update__ = "2014-12-06"
-
-
+import collections
+import csv
+import functools
+import io
 import os
 import warnings
 
@@ -15,7 +14,89 @@ import yaml
 from bibloader import bibtex_loader
 import locale_strings
 import sitetree
+
+
+__update__ = "2014-12-06"
+
+
 warnings.simplefilter('always')
+
+
+##############################################################################
+#
+# utility functions
+#
+##############################################################################
+
+
+def warn(msg):
+    """Issue a warning."""
+    print(msg)
+    warnings.warn(msg, Warning)
+
+
+def translate(expression, lang, folder, generator):
+    """Search for a translation of 'expression' into language 'lang'.
+
+    The search starts in 'folder', continues through 'folder's parent folders
+    and ultimately searches 'generator'['_data']['_transtable']
+    """
+    try:
+        tr = sitetree.cascaded_getitem(expression, folder, '_transtable', lang)
+    except KeyError:
+        tr = generator['_data']['_transtable'].\
+            bestmatch(lang)['content'][expression]
+    return tr
+
+
+@jinja2.environmentfilter
+def jinja2_tr(env, expression):
+    """Translates expression within the given jinja2 environment.
+
+    This requires that the variables 'local', 'language' and 'generator' are
+    defined in the jinja2 environment.
+    """
+    return translate(expression, env.globals['language'], env.globals['local'],
+                     env.globals['generator'])
+
+
+###############################################################################
+#
+# loader functions for specific data types
+#
+###############################################################################
+
+
+def completing_loader(loader_func):
+    """Decorator that marks a function as full loader.
+
+    Completing loaders assemble different language versions of the data all by
+    themselves, whereas ordinary loader leave this to the load() function.
+
+    They can be chained with ordinary loaders, but there can be only one
+    completing loader in the chain and it must appear at the end of the chain.
+    A chain that contains a completing loader is itself considered as a
+    completing loader.
+
+    Completing loaders return a dictionary of one ore more language versions of
+    content found in the file (instead of just the processed content).
+    """
+    @functools.wraps(loader_func)
+    def wrapper(filename, metadata):
+        assert isinstance(metadata, collections.Mapping)
+        entry = loader_func(filename, metadata)
+        assert isinstance(entry, collections.Mapping)
+        if isinstance(entry, sitetree.Entry):
+            return entry
+        else:
+            return sitetree.Entry(entry)
+
+    wrapper.completing_loader = True
+    return wrapper
+
+
+def is_completing_loader(loader_func):
+    return hasattr(loader_func, 'completing_loader')
 
 
 def markdown_loader(data, metadata):
@@ -31,6 +112,17 @@ def yaml_loader(data, metadata):
         return ""
 
 
+def csv_loader(data, metadata):
+    """A loader for csv data.
+    """
+    with io.StringIO(data, newline='') as csvfile:
+        dialect = csv.Sniffer().sniff(csvfile.read(2048), delimiters=";, \t")
+        csvfile.seek(0)
+        reader = csv.reader(csvfile, dialect)
+        table = list(reader.__iter__())
+        return table
+
+
 class CustomJinja2Loader(jinja2.FileSystemLoader):
 
     """A custom jinja2 loader that returns the page templates and reads
@@ -43,16 +135,11 @@ class CustomJinja2Loader(jinja2.FileSystemLoader):
     def __init__(self, data, template_paths):
         paths = ["./"]
         if template_paths:
-            if isinstance(template_paths, str):
-                paths.append(template_paths)
-            else:
-                paths.extend(template_paths)
+            paths.extend(template_paths)
         jinja2.FileSystemLoader.__init__(self, paths)
         self.data = data
 
     def get_source(self, environment, template):
-        print(">>> " + template, environment.globals)
-        # assert False
         if template:
             return jinja2.FileSystemLoader.get_source(self, environment,
                                                       template)
@@ -63,13 +150,19 @@ class CustomJinja2Loader(jinja2.FileSystemLoader):
 def jinja2_loader(data, metadata):
     """A loader for jinja2 templates.
     """
-    templ_path = ""
-    if "config" in metadata and "template_path" in metadata["config"]:
-        templ_path = metadata["config"]["template_path"]
-    env = jinja2.Environment(loader=CustomJinja2Loader(data, templ_path))
+    templ_paths = ""
+    if "config" in metadata and "template_paths" in metadata["config"]:
+        templ_paths = metadata["config"]["template_paths"]
+    env = jinja2.Environment(loader=CustomJinja2Loader(data, templ_paths))
     env.globals.update(metadata)
+    env.filters['TR'] = jinja2_tr
     templ = env.get_template("")
-    result = templ.render()  # metadata)
+    try:
+        result = templ.render()  # tmpl.render(metadata)
+    except jinja2.exceptions.TemplateNotFound:
+        print(os.getcwd())
+        print(os.path.abspath(os.getcwd()))
+        assert False
     return result
 
 
@@ -79,6 +172,7 @@ def gen_chainloader(loader_list):
     Args:
         loader_list: A list of functions (data, metadata) -> data
     """
+    assert loader_list  # must not be empty
     chain = tuple(loader_list)
 
     def chainloader(data, metadata):
@@ -86,7 +180,53 @@ def gen_chainloader(loader_list):
             data = loader(data, metadata)
         return data
 
-    return chainloader
+    if is_completing_loader(chain[-1]):
+        return completing_loader(chainloader)
+    else:
+        return chainloader
+
+
+class RedundantTransTable(Exception):
+    pass
+
+
+@completing_loader
+def load_transtable(table, metadata):
+    """Reads a translation table from the disk.
+
+    Each column contains the translations for one particular language.
+    The first column is considered to contain the reference language.
+    The first row of the table must contain the language codes.
+
+    Args:
+        table(nested list): A list of table rows
+        metadata(dict): A metadata dictionary
+    """
+    keys = [table[row][0] for row in range(1, len(table))]
+    if len(keys) != len(set(keys)):
+        raise RedundantTransTable("Multiple occurrences of: {0!s}".format(
+            collections.Counter(keys).most_common(3)))
+    variants = sitetree.Entry()
+    for i, lang in enumerate(table[0]):
+        locale_strings.valid_locale(lang, raise_error=True)
+        variants[lang] = {'metadata': metadata.copy(), 'content': {}}
+        for k, key in enumerate(keys, 1):
+            variants[lang]['content'][key] = table[k][i]
+    return variants
+
+
+##############################################################################
+#
+# high level generic loading functions for (compound) files and directories
+#
+##############################################################################
+
+
+STOCK_LOADERS = {".md": markdown_loader,
+                 ".jinja2": jinja2_loader,
+                 ".bib": bibtex_loader,
+                 ".csv": csv_loader,
+                 ".ttbl": load_transtable}
 
 
 def extract_locale(filepath):
@@ -116,15 +256,15 @@ def extract_locale(filepath):
             if lc in locale_strings.fourletter_set:
                 return lc
             elif name[-5:-3].islower() and name[-2:].isupper():
-                raise ValueError("Unrecognized locale %s in filename %s" %
-                                 (lc, filepath))
+                raise locale_strings.LocaleError("%s in file %s" %
+                                                 (lc, filepath))
         if L > 3 and name[-3] == "_":
             lc = name[-2:]
             if lc in locale_strings.twoletter_set:
                 return lc
             elif lc.isalpha():
-                raise ValueError("Unrecognized locale %s in filename %s" %
-                                 (lc, filepath))
+                raise locale_strings.LocaleError("%s in file %s" %
+                                                 (lc, filepath))
         return 'nope'
 
     parent, path = os.path.split(filepath)
@@ -149,7 +289,6 @@ def fullpath(path, root):
 
 
 class MalformedFile(Exception):
-    HEADER_DATA_MISMATCH = "Wrong number of headers"
     END_MARKER_MISSING = "No end marker for last header"
     LANGUAGE_INFO_MISSING = "Language info missing in chunk header"
 
@@ -159,7 +298,8 @@ def load(filepath,
          metadata_loader=lambda data: yaml_loader(data, {}),
          injected_metadata={},
          delimiter="+++"):
-    """Loads a file containing markup-text or data and (potentially) metadata.
+    """Loads a file containing markup-text or data and possibly metadata
+    in one or more different languages.
 
     Metadata, if present, stands at the beginning of the file and is enclosed
     by delimiter lines (e.g. '+++').
@@ -211,7 +351,6 @@ def load(filepath,
     +++
     <p>Guten Morgen!</p>
 
-    End of Example
 
     Args:
         filepath (string): A file path, e.g. "example.html"
@@ -231,6 +370,8 @@ def load(filepath,
         {'DE': {'metadata': {...}, 'content': '<p>Guten Morgen!</p>'},
          'EN': ... }
     """
+    assert not is_completing_loader(data_loader)
+    assert not is_completing_loader(metadata_loader)
 
     metadata_headers = []
     data_chunks = []
@@ -267,14 +408,13 @@ def load(filepath,
     if len(metadata_headers) < len(data_chunks):
         metadata_headers.insert(0, "")
 
-    page = sitetree.Entry()
+    entry = sitetree.Entry()
     common_metadata = {}
     common_data = ""
     first_chunk_flag = True  # Only one common chunk is allowed and this must
     # be at the very beginning of the file
     for raw_metadata, raw_data in zip(metadata_headers, data_chunks):
-        metadata = {}
-        metadata.update(injected_metadata)
+        metadata = injected_metadata.copy()
         metadata.update(common_metadata)
         metadata.update(metadata_loader(raw_metadata))
         data = common_data + raw_data if common_data else raw_data
@@ -291,17 +431,20 @@ def load(filepath,
                 'metadata': metadata,
                 'content': data_loader(data, metadata)
             }
-            page[metadata["language"]] = variant
-    if not page:
+            entry[metadata["language"]] = variant
+    if not entry:
+        # the whole file contains only one language version and no 'language'
+        # in its metadata (or no metadata at all). Therefore the language
+        # will be inferred from the filename or directory name or set to 'ANY'
         site_path = injected_metadata.get('config', {}).get('site_path', '')
         lang = extract_locale(fullpath(filepath, site_path))
-        page[lang] = {'metadata': common_metadata,
-                      'content': data_loader(common_data, common_metadata)}
+        entry[lang] = {'metadata': common_metadata,
+                       'content': data_loader(common_data, common_metadata)}
 
-    return page
+    return entry
 
 
-def scan_directory(path, loaders, injected_metadata):
+def scan_directory(path, loaders, injected_metadata, parent=None):
     """Reads all files in the directory path for which a loader is given
     for at least the last extension.
 
@@ -327,74 +470,114 @@ def scan_directory(path, loaders, injected_metadata):
     Args:
         path (string): the directory to be scanned
         loaders (dict): A mapping file extension -> loader function.
-                        see load_and_split()
+                        see load()
         injected_metadata (dict): metadata that can be accessed from templates
+        parent(sitetree.Folder): A reference to the parent folder object
     Returns:
-        An OrderedDict mapping the basenames of each processed file to the
-        contents as returned by the load_and_split() function.
+        An sitetree.Folder mapping the basenames of each processed file to the
+        contents as returned by the load() function.
     """
+    assert not ('basename' in injected_metadata or
+                'local' in injected_metadata)
+    assert not parent or isinstance(parent, sitetree.Folder)
+
+    folder = sitetree.Folder()
+    if parent:
+        folder['__parent'] = parent
+
     old_dir = os.getcwd()
     os.chdir(path)
-    pages = sitetree.Folder()
-    chain = []  # declare chain variable
+
     contents = os.listdir()
     contents.sort(key=str.lower)
-    for filename in contents:
-        if filename.startswith("__"):
+    data_entries, data_dirs, page_dirs, page_entries = [], [], [], []
+    for name in contents:
+        if name.startswith('__'):
             continue
+        if name.startswith('_'):
+            if os.path.isdir(name):
+                data_dirs.append(name)
+            else:
+                data_entries.append(name)
+        else:
+            if os.path.isdir(name):
+                page_dirs.append(name)
+            else:
+                page_entries.append(name)
+
+    def read_entry(filename):
         basename, ext = os.path.splitext(filename)
-        # generate a chain of loaders for all subsequent extensions of a file
-        # (e.g. "file.markdown.jinja2") so that the loader for the last
-        # extension will be applied first.
+#         if is_completing_loader(loaders.get(ext, None)):
+#             metadata = injected_metadata.copy()
+#             metadata.update({'basename': basename, 'local': folder})
+#             folder[basename] = loaders[ext](filename, metadata)
+#         else:
+        # generate a chain of loaders for all subsequent extensions of a
+        # file (e.g. "file.markdown.jinja2") so that the loader for the
+        # last extension will be applied first.
         chain = []  # reset chain variable
         while ext:
             if ext in loaders:
                 chain.append(loaders[ext])
                 basename, ext = os.path.splitext(basename)
             else:
-                warnstr = "No loader registered for extension '%s'" % ext
-                print(warnstr)
-                warnings.warn(warnstr, Warning)
+                warn("No loader registered for extension '%s'" % ext)
                 ext = ""
         if chain:
             print("Loading file %s" % filename)
-            metadata = {'basename': basename, 'local': pages}
-            for key in metadata:
-                if key in injected_metadata:
-                    raise ValueError(("Keys {0!s} not allowed in injected " +
-                                      " metadata. Stuck on key {1!s}").format(
-                                     metadata.keys(), key))
-            metadata.update(injected_metadata)
-            pages[basename] = load(filename, gen_chainloader(chain),
-                                   injected_metadata=metadata)
-            # local access to local data only during loading!
-            for lang in pages[basename]:
-                del pages[basename][lang]['metadata']['local']
+            metadata = injected_metadata.copy()
+            metadata.update({'basename': basename, 'local': folder})
+            chainloader = gen_chainloader(chain)
+            if is_completing_loader(chainloader):
+                with open(filename) as f:
+                    folder[basename] = chainloader(f.read(), metadata)
+            else:
+                folder[basename] = load(filename, chainloader,
+                                        injected_metadata=metadata)
+
+    for filename in data_entries:
+        read_entry(filename)
+    for dirname in data_dirs + page_dirs:
+        folder[dirname] = scan_directory(dirname, loaders, injected_metadata,
+                                         parent=folder)
+    for filename in page_entries:
+        read_entry(filename)
 
     os.chdir(old_dir)
-    return pages
+    return folder
 
 
-def test_load_and_split():
+###############################################################################
+#
+# test code
+#
+###############################################################################
+
+
+def test_load():
     old_dir = os.getcwd()
+    generator = sitetree.Folder()
+    generator['_data'] = scan_directory("_data",
+                                        {".yaml": yaml_loader,
+                                         ".csv": csv_loader,
+                                         ".ttbl": load_transtable},
+                                        {})
     os.chdir("tests/testdata")
     bibdata = load("_bibdata.bib", bibtex_loader)
     result = load("Kants_Friedensschrift.md.jinja2",
                   gen_chainloader([jinja2_loader, markdown_loader]),
                   injected_metadata={'basename': "Kants_Friedensschrift",
                                      'local': {"_bibdata": bibdata},
-                                     'config': {"template_path":
-                                                "../../"}})
+                                     'config': {"template_paths":
+                                                ["../../"]},
+                                     'generator': generator})
     for lang in result:
         print(result[lang]['content'])
     os.chdir(old_dir)
 
 
 def test_scan_directory(metadata):
-    tree = scan_directory("./", {".md": markdown_loader,
-                                 ".jinja2": jinja2_loader,
-                                 ".bib": bibtex_loader},
-                          metadata)
+    tree = scan_directory("./", STOCK_LOADERS, metadata)
     for lang in ["DE", "EN"]:
         with open("output_%s.html" % lang, "w") as out:
             out.write(
@@ -406,5 +589,5 @@ def test_scan_directory(metadata):
 
 
 if __name__ == "__main__":
-    test_load_and_split()
+    test_load()
     # test_scan_directory()

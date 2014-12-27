@@ -7,16 +7,12 @@ import unittest
 
 class TestLoader(unittest.TestCase):
 
-    def writeSnippet(self, snippet):
+    def loadSnippet(self, snippet):
         file_name = "testdata/loadertest.txt"
         with open(file_name, "w") as f, \
                 io.StringIO(snippet) as g:
             for line in g:
                 f.write(line.lstrip())
-        return file_name
-
-    def loadSnippet(self, snippet):
-        file_name = self.writeSnippet(snippet)
         result = loader.load(file_name)
         os.remove(file_name)
         return result
@@ -37,35 +33,38 @@ class TestLoader(unittest.TestCase):
         snp2 = snp1.replace("\n", "\n  \n\n \n")
         self.assertEqual(self.loadSnippet(snp2), res1)
 
-    def test_zero_header_files(self):
+    def test_zero_headers(self):
         res = {'ANY': {'metadata': {}, 'content': "inhalt"}}
         self.assertEqual(self.loadSnippet("inhalt"), res)
         res['ANY']['content'] = "inhalt\n"
         self.assertEqual(self.loadSnippet("\ninhalt\n\n"), res)
 
-    def test_empty_header_file(self):
+    def test_empty_header(self):
         snp = "+++\n+++\ninhalt"
         res = {'ANY': {'metadata': {}, 'content': "inhalt"}}
         self.assertEqual(self.loadSnippet(snp), res)
 
-    def test_single_header_file(self):
+    def test_single_header(self):
         snp1 = "+++\na: 1\n+++\ninhalt\n"
         res1 = {'ANY': {'metadata': {'a': 1}, 'content': "inhalt\n"}}
         self.assertEqual(self.loadSnippet(snp1), res1)
 
-    def test_multiple_header_files(self):
+    def test_multiple_headers(self):
         pass
 
-#     def test_missing_language(self):
-#         self.assertEqual(self.loadSnippet("+++\n+++\n" + snp4), res4)
-#         self.assertEqual(self.loadSnippet("+++\n+++\n+++\n+++\n" + snp4), res4)
+    def test_bad_headers(self):
+        for snp in ["+++", "\n+++\n", "a\n+++\nb: 1", "\n+++\n+++\n+++"]:
+            self.assertRaisesRegex(loader.MalformedFile,
+                                   loader.MalformedFile.END_MARKER_MISSING,
+                                   self.loadSnippet, snp)
 
     def test_empty_files(self):
         empty = {'ANY': {'metadata': {}, 'content': ""}}
         self.assertEqual(self.loadSnippet(""), empty)
         self.assertEqual(self.loadSnippet("+++\n+++\n"), empty)
-        file_name = self.writeSnippet("+++\n+++\n+++\n+++\n")
-        self.assertRaises(loader.MalformedFile, loader.load(file_name))
+        self.assertRaisesRegex(loader.MalformedFile,
+                               loader.MalformedFile.LANGUAGE_INFO_MISSING,
+                               self.loadSnippet, "+++\n+++\n+++\n+++\n")
 
 
 if __name__ == "__main__":

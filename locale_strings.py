@@ -57,6 +57,25 @@ twoletter = [
 twoletter_set = set(twoletter)
 
 
+class LocaleError(Exception):
+
+    def __init__(self, locale_str):
+        Exception.__init__(self, "%s is not a valid locale" % locale_str)
+
+
+def valid_locale(locale_str, raise_error=False):
+    """Returns True if locale_str represents a valid locale. Otherwise,
+    returns False or raises an error depending on raise_error.
+    """
+    if (locale_str in fourletter_set or locale_str in twoletter_set or
+            locale_str == 'ANY'):
+        return True
+    else:
+        if raise_error:
+            raise LocaleError(locale_str)
+    return False
+
+
 def narrow_match(requested, available):
     """Finds the best match for the requested language in a set of available
     languages.
