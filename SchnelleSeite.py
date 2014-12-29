@@ -16,12 +16,14 @@ config = {
     "template_paths": [os.path.join(SCRIPT_PATH, "templates")],
     "site_path": SITE_PATH,
     "build_path": "__site",
-    "generator_path": SCRIPT_PATH
+    "generator_path": SCRIPT_PATH,
+    "languages": ['DE', 'EN']
 }
 
 root = sitetree.Folder()
 root['_data'] = generator.scan_directory(os.path.join(SCRIPT_PATH, "_data"),
-                                         loader.STOCK_LOADERS, {})
+                                         loader.STOCK_LOADERS,
+                                         {'language': 'ANY'})
 
 if __name__ == "__main__":
     os.chdir("../newsite")

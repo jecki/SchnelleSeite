@@ -128,11 +128,18 @@ def match(requested, available, substitution_list):
 
 
 def get_locale(name):
-    """Retrieve locale information from file or directory name. Returns 'nope'
-    if no locale information is encoded in name.
+    """Retrieve locale information from a file or directory name.
+
+    Parameters:
+        name(str): file or directory basename (i.e. without any extensions)
+    Returns:
+        locale information (string) or empty string if the name does not
+        contain any locale information
+    Raises:
+        LocaleError
     """
     L = len(name)
-    if L > 4 and name[-4].upper() == "_ANY":
+    if L > 4 and name[-4:].upper() == "_ANY":
         return 'ANY'
     if L > 6 and name[-6] == "_" and name[-3] == "_":
         lc = name[-5:]
@@ -146,7 +153,7 @@ def get_locale(name):
             return lc
         elif lc.isalpha():
             raise LocaleError("%s in file %s" % (lc, name))
-    return 'nope'
+    return ''
 
 
 def extract_locale(filepath):
@@ -163,31 +170,28 @@ def extract_locale(filepath):
     An error is reported, if there appears to be locale information
     but if it is malformed.
 
-    'any' is returned if no (intended) locale information seems to be
+    An empty string is returned if no (intended) locale information seems to be
     present in the filename or any of the parent directories' names.
     """
-
     parent, path = os.path.split(filepath)
     while path:
-        basename, ext = os.path.splitext(path)
-        while ext:
-            basename, ext = os.path.splitext(basename)
+        pos = path.rfind('.')
+        basename = path[:pos] if pos >= 0 else path
         locale = get_locale(basename)
-        if locale != 'nope':
+        if locale:
             return locale
         parent, path = os.path.split(parent)
-    return 'ANY'
+    return ''
 
 
 def remove_locale(name):
-    """Returns file or directory name with locale information removed."""
-    lc = get_locale(name)
-    if lc == 'nope':
-        return name
+    """Returns file or directory name with locale information removed.
+    """
+    assert name.find(os.path.sep) == -1
+    pos = name.rfind(".")
+    basename = name[:pos] if pos >= 0 else name
+    locale = get_locale(basename)
+    if locale:
+        return basename[:-len(locale) - 1] + (name[pos:] if pos >= 0 else "")
     else:
-        exts = []
-        basename, ext = os.path.splitext(name)
-        while ext:
-            exts.append(ext)
-            basename, ext = os.path.splitext(name)
-        return basename[:-len(lc) - 1] + "".join(reversed(exts))
+        return name

@@ -2,11 +2,15 @@
 
 import os
 import re
+import sys
 import warnings
 
 import sitetree
 import loader
-import locale_strings
+from locale_strings import extract_locale, remove_locale
+
+
+warnings.simplefilter('always')
 
 
 include_patterns = [
@@ -80,6 +84,8 @@ def scan_directory(path, loaders, injected_metadata, parent=None):
     contents.sort(key=str.lower)
     data_entries, data_dirs, page_dirs, page_entries = [], [], [], []
     for name in contents:
+        if name.startswith("."):
+            pass
         if is_excluded(name):
             continue
         if name.startswith('_'):
@@ -93,7 +99,14 @@ def scan_directory(path, loaders, injected_metadata, parent=None):
             else:
                 page_entries.append(name)
 
+    site_path = injected_metadata.get('config', {}).get('site_path', '')
+    languages = injected_metadata.get('config', {}).get('languages', ['ANY'])
+
     def read_entry(filename):
+        if os.path.isdir(filename):
+            folder[remove_locale(dirname)] = scan_directory(
+                dirname, loaders, injected_metadata, parent=folder)
+            return
         basename, ext = os.path.splitext(filename)
         # generate a chain of loaders for all subsequent extensions of a
         # file (e.g. "file.markdown.jinja2") so that the loader for the
@@ -104,7 +117,8 @@ def scan_directory(path, loaders, injected_metadata, parent=None):
                 chain.append(loaders[ext])
                 basename, ext = os.path.splitext(basename)
             else:
-                warn("No loader registered for extension '%s'" % ext)
+                warn("No loader registered for extension '%s' of file %s" %
+                     (filename, ext))
                 while ext:
                     basename, ext = os.path.splitext(basename)
         if chain:
@@ -112,16 +126,33 @@ def scan_directory(path, loaders, injected_metadata, parent=None):
             metadata = injected_metadata.copy()
             metadata.update({'basename': basename, 'local': folder})
             chainloader = loader.gen_chainloader(chain)
-            folder[locale_strings.remove_locale(basename)] = loader.load(
+            folder[remove_locale(basename)] = loader.load(
                 filename, chainloader, injected_metadata=metadata)
 
+    def multilang(entry_name):
+        """Unless the entry specifies a particular language (or 'ANY') in its
+        file name, parent directories or metadata within the file, read the
+        entry several times, one time for each language specified in the
+        configuration data of the site.
+        """
+        if 'language' in injected_metadata or loader.peep_lang(entry_name):
+            read_entry(entry_name)
+        else:
+            locale = extract_locale(loader.fullpath(entry_name, site_path))
+            locales = [locale] if locale else languages
+            for lang in locales:
+                # consider file to be of language 'lang' when reading and
+                # rendering templates
+                injected_metadata['language'] = lang
+                read_entry(entry_name)
+            del injected_metadata['language']
+
     for filename in data_entries:
-        read_entry(filename)
+        multilang(filename)
     for dirname in data_dirs + page_dirs:
-        folder[locale_strings.remove_locale(dirname)] = scan_directory(
-            dirname, loaders, injected_metadata, parent=folder)
+        multilang(dirname)
     for filename in page_entries:
-        read_entry(filename)
+        multilang(filename)
 
     os.chdir(old_dir)
     return folder
@@ -135,22 +166,27 @@ def scan_directory(path, loaders, injected_metadata, parent=None):
 
 
 def test_load():
+    """Simple Test for load()-function."""
     old_dir = os.getcwd()
     generator = sitetree.Folder()
     generator['_data'] = scan_directory("_data",
                                         {".yaml": loader.yaml_loader,
                                          ".csv": loader.csv_loader,
                                          ".ttbl": loader.load_transtable},
-                                        {})
+                                        {'language': 'ANY'})
     os.chdir("tests/testdata")
-    bibdata = loader.load("_bibdata.bib", loader.bibtex_loader)
+    bibdata = loader.load("_bibdata_ANY.bib", loader.bibtex_loader,
+                          injected_metadata={'config': {"template_paths":
+                                                        ["../../"],
+                                                        "site_path": ""}})  # sys.argv[1] if len(sys.argv) > 1 else os.getcwd()}})
     result = loader.load("Kants_Friedensschrift.md.jinja2",
                          loader.gen_chainloader([loader.jinja2_loader,
                                                  loader.markdown_loader]),
                          injected_metadata={'basename': "Kants_Friedensschrift",
                                             'local': {"_bibdata": bibdata},
                                             'config': {"template_paths":
-                                                       ["../../"]},
+                                                       ["../../"],
+                                                       "site_path": sys.argv[1] if len(sys.argv) > 1 else os.getcwd()},
                                             'root': generator})
     for lang in result:
         print(result[lang]['content'])
@@ -158,6 +194,7 @@ def test_load():
 
 
 def test_scan_directory(metadata):
+    """Simple Test for scan_directory()-function."""
     tree = scan_directory("./", loader.STOCK_LOADERS, metadata)
     for lang in ["DE", "EN"]:
         with open("output_%s.html" % lang, "w") as out:
@@ -170,5 +207,6 @@ def test_scan_directory(metadata):
 
 
 if __name__ == "__main__":
+    # print("hi")
     test_load()
     # test_scan_directory()

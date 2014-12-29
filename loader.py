@@ -5,7 +5,6 @@ import csv
 import functools
 import io
 import os
-import warnings
 
 import jinja2
 import markdown
@@ -17,9 +16,6 @@ import sitetree
 
 
 __update__ = "2014-12-06"
-
-
-warnings.simplefilter('always')
 
 
 ##############################################################################
@@ -100,28 +96,28 @@ def is_completing_loader(loader_func):
     return hasattr(loader_func, 'completing_loader')
 
 
-def markdown_loader(data, metadata):
+def markdown_loader(text, metadata):
     """A loader function for markdown."""
-    return markdown.markdown(data)
+    return markdown.markdown(text)
 
 
-def yaml_loader(data, metadata):
+def yaml_loader(text, metadata):
     """A loader function for yaml."""
-    if data:
-        return yaml.load(data)
+    if text:
+        return yaml.load(text)
     else:
         return ""
 
 
-def csv_loader(data, metadata):
-    """A loader for csv data.
+def csv_loader(text, metadata):
+    """A loader for csv text.
     """
-    with io.StringIO(data, newline='') as csvfile:
+    with io.StringIO(text, newline='') as csvfile:
         dialect = csv.Sniffer().sniff(csvfile.read(2048), delimiters=";, \t")
         csvfile.seek(0)
         reader = csv.reader(csvfile, dialect)
         table = list(reader.__iter__())
-        return table
+    return table
 
 
 class CustomJinja2Loader(jinja2.FileSystemLoader):
@@ -148,13 +144,13 @@ class CustomJinja2Loader(jinja2.FileSystemLoader):
             return (self.data, "", lambda: True)
 
 
-def jinja2_loader(data, metadata):
+def jinja2_loader(text, metadata):
     """A loader for jinja2 templates.
     """
     templ_paths = ""
     if "config" in metadata and "template_paths" in metadata["config"]:
         templ_paths = metadata["config"]["template_paths"]
-    env = jinja2.Environment(loader=CustomJinja2Loader(data, templ_paths))
+    env = jinja2.Environment(loader=CustomJinja2Loader(text, templ_paths))
     env.globals.update(metadata)
     env.globals['DATA'] = jinja2_getitem
     env.filters['TR'] = jinja2_tr
@@ -162,6 +158,7 @@ def jinja2_loader(data, metadata):
     try:
         result = templ.render()  # tmpl.render(metadata)
     except jinja2.exceptions.TemplateNotFound:
+        # TEST CODE to be removed...
         print(os.getcwd())
         print(os.path.abspath(os.getcwd()))
         assert False
@@ -177,10 +174,10 @@ def gen_chainloader(loader_list):
     assert loader_list  # must not be empty
     chain = tuple(loader_list)
 
-    def chainloader(data, metadata):
+    def chainloader(text, metadata):
         for loader in chain:
-            data = loader(data, metadata)
-        return data
+            text = loader(text, metadata)
+        return text
 
     if is_completing_loader(chain[-1]):
         return completing_loader(chainloader)
@@ -231,6 +228,32 @@ STOCK_LOADERS = {".md": markdown_loader,
                  ".ttbl": load_transtable}
 
 
+def peep_lang(filename, md_loader=yaml_loader, delimiter="+++"):
+    """Return true, if metadata field 'language' is defined somewhere within
+    the file. Return false, if not or if 'filename' refers to a directory.
+    """
+    def read_mdblock(f):
+        block = []
+        line = f.readline()
+        while line and line.rstrip() != delimiter:
+            block.append(line)
+            line = f.readline()
+        return "".join(block)
+
+    if os.path.isdir(filename):
+        return False
+    with open(filename, "r") as f:
+        line = f.readline()
+        while line:
+            if line.rstrip() == delimiter:
+                md_block = read_mdblock(f)
+                data = md_loader(md_block, {})
+                if 'language' in data:
+                    return True
+            line = f.readline()
+    return False
+
+
 def fullpath(path, root):
     """Returns the path starting from path root. Raises an error if root is
     not the beginning of the absolute path of the path."""
@@ -244,7 +267,7 @@ def fullpath(path, root):
 
 class MalformedFile(Exception):
     END_MARKER_MISSING = "No end marker for last header"
-    LANGUAGE_INFO_MISSING = "Language info missing in chunk header"
+    LANGUAGE_INFO_MISSING = "Language info missing"
 
 
 def load(filepath,
@@ -369,11 +392,12 @@ def load(filepath,
     first_chunk_flag = True  # Only one common chunk is allowed and this must
     # be at the very beginning of the file
     for raw_metadata, raw_data in zip(metadata_headers, data_chunks):
+        chunk_metadata = metadata_loader(raw_metadata)
         metadata = injected_metadata.copy()
         metadata.update(common_metadata)
-        metadata.update(metadata_loader(raw_metadata))
-        data = common_data + raw_data if common_data else raw_data
-        if "language" not in metadata:
+        metadata.update(chunk_metadata)
+        data = common_data + raw_data
+        if "language" not in chunk_metadata:
             if first_chunk_flag:
                 common_metadata = metadata
                 common_data = data
@@ -392,8 +416,13 @@ def load(filepath,
         # in its metadata (or no metadata at all). Therefore the language
         # will be inferred from the filename or directory name or set to 'ANY'
         site_path = injected_metadata.get('config', {}).get('site_path', '')
-        lang = locale_strings.extract_locale(fullpath(filepath, site_path))
-        entry[lang] = {'metadata': common_metadata,
-                       'content': data_loader(common_data, common_metadata)}
+        metadata = injected_metadata.copy()
+        metadata.update(common_metadata)
+        lang = metadata.setdefault("language", locale_strings.extract_locale(
+            fullpath(filepath, site_path)))
+        if not lang:
+            raise MalformedFile(MalformedFile.LANGUAGE_INFO_MISSING)
+        entry[lang] = {'metadata': metadata,
+                       'content': data_loader(data, common_metadata)}
 
     return entry
