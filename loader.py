@@ -29,17 +29,11 @@ warnings.simplefilter('always')
 ##############################################################################
 
 
-def warn(msg):
-    """Issue a warning."""
-    print(msg)
-    warnings.warn(msg, Warning)
-
-
 def translate(expression, lang, folder, generator):
     """Search for a translation of 'expression' into language 'lang'.
 
     The search starts in 'folder', continues through 'folder's parent folders
-    and ultimately searches 'generator'['_data']['_transtable']
+    and ultimately searches 'root'['_data']['_transtable']
     """
     try:
         tr = sitetree.cascaded_getitem(expression, folder, '_transtable', lang)
@@ -53,11 +47,18 @@ def translate(expression, lang, folder, generator):
 def jinja2_tr(env, expression):
     """Translates expression within the given jinja2 environment.
 
-    This requires that the variables 'local', 'language' and 'generator' are
+    This requires that the variables 'local', 'language' and 'root' are
     defined in the jinja2 environment.
     """
     return translate(expression, env.globals['language'], env.globals['local'],
-                     env.globals['generator'])
+                     env.globals['root'])
+
+
+@jinja2.environmentfunction
+def jinja2_getitem(env, key, datasource):
+    """Returns an item from a datas source."""
+    return sitetree.getitem(key, env.globals['local'], datasource,
+                            env.globals['language'])
 
 
 ###############################################################################
@@ -155,6 +156,7 @@ def jinja2_loader(data, metadata):
         templ_paths = metadata["config"]["template_paths"]
     env = jinja2.Environment(loader=CustomJinja2Loader(data, templ_paths))
     env.globals.update(metadata)
+    env.globals['DATA'] = jinja2_getitem
     env.filters['TR'] = jinja2_tr
     templ = env.get_template("")
     try:
@@ -217,7 +219,7 @@ def load_transtable(table, metadata):
 
 ##############################################################################
 #
-# high level generic loading functions for (compound) files and directories
+# high level generic loading function for (compound) files
 #
 ##############################################################################
 
@@ -227,54 +229,6 @@ STOCK_LOADERS = {".md": markdown_loader,
                  ".bib": bibtex_loader,
                  ".csv": csv_loader,
                  ".ttbl": load_transtable}
-
-
-def extract_locale(filepath):
-    """Extracts locale information from filename or parent directory.
-    Returns locale string or 'any'.
-
-    Locale information is assumed to reside at the end of the basename of the
-    file, right before the extension. It must either have the form "_xx_XX" or
-    "_XX", eg. "_de_DE" or simply "_DE", and represent a valid locale.
-
-    If no locale information is found in the file name the names of the parent
-    directory are checked inward out for locale information.
-
-    An error is reported, if there appears to be locale information
-    but if it is malformed.
-
-    'any' is returned if no (intended) locale information seems to be
-    present in the filename or any of the parent directories' names.
-    """
-
-    def get_locale(name):
-        L = len(name)
-        if L > 4 and name[-4].upper() == "_ANY":
-            return 'ANY'
-        if L > 6 and name[-6] == "_" and name[-3] == "_":
-            lc = name[-5:]
-            if lc in locale_strings.fourletter_set:
-                return lc
-            elif name[-5:-3].islower() and name[-2:].isupper():
-                raise locale_strings.LocaleError("%s in file %s" %
-                                                 (lc, filepath))
-        if L > 3 and name[-3] == "_":
-            lc = name[-2:]
-            if lc in locale_strings.twoletter_set:
-                return lc
-            elif lc.isalpha():
-                raise locale_strings.LocaleError("%s in file %s" %
-                                                 (lc, filepath))
-        return 'nope'
-
-    parent, path = os.path.split(filepath)
-    while path:
-        basename = os.path.splitext(path)[0]
-        locale = get_locale(basename)
-        if locale != 'nope':
-            return locale
-        parent, path = os.path.split(parent)
-    return 'ANY'
 
 
 def fullpath(path, root):
@@ -370,12 +324,13 @@ def load(filepath,
         {'DE': {'metadata': {...}, 'content': '<p>Guten Morgen!</p>'},
          'EN': ... }
     """
-    assert not is_completing_loader(data_loader)
     assert not is_completing_loader(metadata_loader)
 
     metadata_headers = []
     data_chunks = []
     with open(filepath, "r") as f:
+        if is_completing_loader(data_loader):
+            return data_loader(f.read(), injected_metadata)
         line = f.readline()
         # skip leading empty lines
         while line and not line.rstrip():
@@ -437,157 +392,8 @@ def load(filepath,
         # in its metadata (or no metadata at all). Therefore the language
         # will be inferred from the filename or directory name or set to 'ANY'
         site_path = injected_metadata.get('config', {}).get('site_path', '')
-        lang = extract_locale(fullpath(filepath, site_path))
+        lang = locale_strings.extract_locale(fullpath(filepath, site_path))
         entry[lang] = {'metadata': common_metadata,
                        'content': data_loader(common_data, common_metadata)}
 
     return entry
-
-
-def scan_directory(path, loaders, injected_metadata, parent=None):
-    """Reads all files in the directory path for which a loader is given
-    for at least the last extension.
-
-    If a file a several extensions, e.g. "example.markdown.jinja2" then the
-    loaders are applied subsequently. In case no loader exists in the loaders
-    dictionary for the last extension (e.g. ".jinja2") the file is ignored
-    completely and not read from the disk at all.
-
-    If no loader is given for a particular extension in the middle of
-    the extension chain (e.g. ".markdown.") then the parsing process stops
-    at this point and the read data will not be processed further even if
-    loaders for other extensions earlier in the chain exist. (A warning
-    is issued in this case, because it is probably a mistake.)
-
-    The files are processed in alphabetical order of their filename. Files
-    that define data that needs to be accessed from within other files should
-    receive a filename that appears earlier in the alphabetical order, e.g.
-        00_data_definition.json
-        data_consumer.jinja2
-
-    See function load() for how the files themselves are processed.
-
-    Args:
-        path (string): the directory to be scanned
-        loaders (dict): A mapping file extension -> loader function.
-                        see load()
-        injected_metadata (dict): metadata that can be accessed from templates
-        parent(sitetree.Folder): A reference to the parent folder object
-    Returns:
-        An sitetree.Folder mapping the basenames of each processed file to the
-        contents as returned by the load() function.
-    """
-    assert not ('basename' in injected_metadata or
-                'local' in injected_metadata)
-    assert not parent or isinstance(parent, sitetree.Folder)
-
-    folder = sitetree.Folder()
-    if parent:
-        folder['__parent'] = parent
-
-    old_dir = os.getcwd()
-    os.chdir(path)
-
-    contents = os.listdir()
-    contents.sort(key=str.lower)
-    data_entries, data_dirs, page_dirs, page_entries = [], [], [], []
-    for name in contents:
-        if name.startswith('__'):
-            continue
-        if name.startswith('_'):
-            if os.path.isdir(name):
-                data_dirs.append(name)
-            else:
-                data_entries.append(name)
-        else:
-            if os.path.isdir(name):
-                page_dirs.append(name)
-            else:
-                page_entries.append(name)
-
-    def read_entry(filename):
-        basename, ext = os.path.splitext(filename)
-#         if is_completing_loader(loaders.get(ext, None)):
-#             metadata = injected_metadata.copy()
-#             metadata.update({'basename': basename, 'local': folder})
-#             folder[basename] = loaders[ext](filename, metadata)
-#         else:
-        # generate a chain of loaders for all subsequent extensions of a
-        # file (e.g. "file.markdown.jinja2") so that the loader for the
-        # last extension will be applied first.
-        chain = []  # reset chain variable
-        while ext:
-            if ext in loaders:
-                chain.append(loaders[ext])
-                basename, ext = os.path.splitext(basename)
-            else:
-                warn("No loader registered for extension '%s'" % ext)
-                ext = ""
-        if chain:
-            print("Loading file %s" % filename)
-            metadata = injected_metadata.copy()
-            metadata.update({'basename': basename, 'local': folder})
-            chainloader = gen_chainloader(chain)
-            if is_completing_loader(chainloader):
-                with open(filename) as f:
-                    folder[basename] = chainloader(f.read(), metadata)
-            else:
-                folder[basename] = load(filename, chainloader,
-                                        injected_metadata=metadata)
-
-    for filename in data_entries:
-        read_entry(filename)
-    for dirname in data_dirs + page_dirs:
-        folder[dirname] = scan_directory(dirname, loaders, injected_metadata,
-                                         parent=folder)
-    for filename in page_entries:
-        read_entry(filename)
-
-    os.chdir(old_dir)
-    return folder
-
-
-###############################################################################
-#
-# test code
-#
-###############################################################################
-
-
-def test_load():
-    old_dir = os.getcwd()
-    generator = sitetree.Folder()
-    generator['_data'] = scan_directory("_data",
-                                        {".yaml": yaml_loader,
-                                         ".csv": csv_loader,
-                                         ".ttbl": load_transtable},
-                                        {})
-    os.chdir("tests/testdata")
-    bibdata = load("_bibdata.bib", bibtex_loader)
-    result = load("Kants_Friedensschrift.md.jinja2",
-                  gen_chainloader([jinja2_loader, markdown_loader]),
-                  injected_metadata={'basename': "Kants_Friedensschrift",
-                                     'local': {"_bibdata": bibdata},
-                                     'config': {"template_paths":
-                                                ["../../"]},
-                                     'generator': generator})
-    for lang in result:
-        print(result[lang]['content'])
-    os.chdir(old_dir)
-
-
-def test_scan_directory(metadata):
-    tree = scan_directory("./", STOCK_LOADERS, metadata)
-    for lang in ["DE", "EN"]:
-        with open("output_%s.html" % lang, "w") as out:
-            out.write(
-                '<html>\n<head>\n<meta charset="utf-8"/>\n</head>\n<body>\n')
-            for page in tree:
-                if lang in tree[page]:
-                    out.write(str(tree[page][lang]['content']))
-            out.write("\n</body>\n</html>\n")
-
-
-if __name__ == "__main__":
-    test_load()
-    # test_scan_directory()

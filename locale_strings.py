@@ -1,4 +1,8 @@
 
+
+import os
+
+
 fourletter = [
     "aa_DJ", "aa_ER", "aa_ET", "ae_CH", "af_ZA", "ag_IN", "ai_IN", "ak_GH",
     "ak_TW", "al_ET", "am_ET", "an_ES", "an_TW", "ap_AN", "ap_AW", "ap_CW",
@@ -121,3 +125,69 @@ def match(requested, available, substitution_list):
                 pass
     raise KeyError("No match found for {0!s} or any of {1!s} in {2!s}".format(
                    requested, substitution_list, available))
+
+
+def get_locale(name):
+    """Retrieve locale information from file or directory name. Returns 'nope'
+    if no locale information is encoded in name.
+    """
+    L = len(name)
+    if L > 4 and name[-4].upper() == "_ANY":
+        return 'ANY'
+    if L > 6 and name[-6] == "_" and name[-3] == "_":
+        lc = name[-5:]
+        if lc in fourletter_set:
+            return lc
+        elif name[-5:-3].islower() and name[-2:].isupper():
+            raise LocaleError("%s in file %s" % (lc, name))
+    if L > 3 and name[-3] == "_":
+        lc = name[-2:]
+        if lc in twoletter_set:
+            return lc
+        elif lc.isalpha():
+            raise LocaleError("%s in file %s" % (lc, name))
+    return 'nope'
+
+
+def extract_locale(filepath):
+    """Extracts locale information from filename or parent directory.
+    Returns locale string or 'any'.
+
+    Locale information is assumed to reside at the end of the basename of the
+    file, right before the extension. It must either have the form "_xx_XX" or
+    "_XX", eg. "_de_DE" or simply "_DE", and represent a valid locale.
+
+    If no locale information is found in the file name the names of the parent
+    directory are checked inward out for locale information.
+
+    An error is reported, if there appears to be locale information
+    but if it is malformed.
+
+    'any' is returned if no (intended) locale information seems to be
+    present in the filename or any of the parent directories' names.
+    """
+
+    parent, path = os.path.split(filepath)
+    while path:
+        basename, ext = os.path.splitext(path)
+        while ext:
+            basename, ext = os.path.splitext(basename)
+        locale = get_locale(basename)
+        if locale != 'nope':
+            return locale
+        parent, path = os.path.split(parent)
+    return 'ANY'
+
+
+def remove_locale(name):
+    """Returns file or directory name with locale information removed."""
+    lc = get_locale(name)
+    if lc == 'nope':
+        return name
+    else:
+        exts = []
+        basename, ext = os.path.splitext(name)
+        while ext:
+            exts.append(ext)
+            basename, ext = os.path.splitext(name)
+        return basename[:-len(lc) - 1] + "".join(reversed(exts))
