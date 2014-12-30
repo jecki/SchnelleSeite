@@ -4,6 +4,7 @@ import collections
 import csv
 import functools
 import io
+import json
 import os
 
 import jinja2
@@ -25,16 +26,16 @@ __update__ = "2014-12-06"
 ##############################################################################
 
 
-def translate(expression, lang, folder, generator):
+def translate(expression, lang, folder, generator_resources):
     """Search for a translation of 'expression' into language 'lang'.
 
     The search starts in 'folder', continues through 'folder's parent folders
-    and ultimately searches 'root'['_data']['_transtable']
+    and ultimately searches site_generator['_data']['_transtable']
     """
     try:
         tr = sitetree.cascaded_getitem(expression, folder, '_transtable', lang)
     except KeyError:
-        tr = generator['_data']['_transtable'].\
+        tr = generator_resources['_data']['_transtable'].\
             bestmatch(lang)['content'][expression]
     return tr
 
@@ -47,7 +48,7 @@ def jinja2_tr(env, expression):
     defined in the jinja2 environment.
     """
     return translate(expression, env.globals['language'], env.globals['local'],
-                     env.globals['root'])
+                     env.globals['config']['generator_resources'])
 
 
 @jinja2.environmentfunction
@@ -106,7 +107,15 @@ def yaml_loader(text, metadata):
     if text:
         return yaml.load(text)
     else:
-        return ""
+        return {}
+
+
+def json_loader(text, metadata):
+    """A loader function for json."""
+    if text:
+        return json.loads(text)
+    else:
+        return {}
 
 
 def csv_loader(text, metadata):
@@ -225,6 +234,8 @@ STOCK_LOADERS = {".md": markdown_loader,
                  ".jinja2": jinja2_loader,
                  ".bib": bibtex_loader,
                  ".csv": csv_loader,
+                 ".yaml": yaml_loader,
+                 ".json": json_loader,
                  ".ttbl": load_transtable}
 
 

@@ -1,4 +1,4 @@
-
+"""generator.py - loading at directory level and site generation"""
 
 import os
 import re
@@ -13,8 +13,14 @@ from locale_strings import extract_locale, remove_locale
 warnings.simplefilter('always')
 
 
+##############################################################################
+#
+# read site data
+#
+##############################################################################
+
 include_patterns = [
-    r'.htaccess'
+    r'.ht.*$'
 ]
 exclude_patterns = [
     r'^[\.#].*',
@@ -23,11 +29,12 @@ exclude_patterns = [
 ]
 
 
-def is_excluded(name):
+def is_excluded(name, site_path="", exclude_paths=set()):
     """Returns true if file or directory is to be excluded from processing.
     """
-    return (any(re.match(ptrn, name) for ptrn in exclude_patterns) and not
-            any(re.match(ptrn, name) for ptrn in include_patterns))
+    return ((any(re.match(ptrn, name) for ptrn in exclude_patterns) and not
+             any(re.match(ptrn, name) for ptrn in include_patterns)) or
+            loader.fullpath(name, site_path) in exclude_paths)
 
 
 def warn(msg):
@@ -80,13 +87,17 @@ def scan_directory(path, loaders, injected_metadata, parent=None):
     old_dir = os.getcwd()
     os.chdir(path)
 
+    config = injected_metadata.get('config', {})
+    site_path = config.get('site_path', '')
+    languages = config.get('languages', ['ANY'])
+
     contents = os.listdir()
     contents.sort(key=str.lower)
     data_entries, data_dirs, page_dirs, page_entries = [], [], [], []
     for name in contents:
         if name.startswith("."):
             pass
-        if is_excluded(name):
+        if is_excluded(name, site_path, set(config.get('copyonly', []))):
             continue
         if name.startswith('_'):
             if os.path.isdir(name):
@@ -98,9 +109,6 @@ def scan_directory(path, loaders, injected_metadata, parent=None):
                 page_dirs.append(name)
             else:
                 page_entries.append(name)
-
-    site_path = injected_metadata.get('config', {}).get('site_path', '')
-    languages = injected_metadata.get('config', {}).get('languages', ['ANY'])
 
     def read_entry(filename):
         if os.path.isdir(filename):
@@ -157,6 +165,16 @@ def scan_directory(path, loaders, injected_metadata, parent=None):
     os.chdir(old_dir)
     return folder
 
+
+###############################################################################
+#
+# write site
+#
+###############################################################################
+
+
+def create_site():
+    pass
 
 ###############################################################################
 #
