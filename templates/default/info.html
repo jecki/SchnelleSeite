@@ -1,0 +1,20 @@
+
+{% extends "__layouts/layout.html" %}
+
+{% block content -%}
+
+{% for article in '_info'|FRAGMENTS -%}
+{{article|CONTENT}}
+{%- endfor %}
+
+{%- endblock %}
+
++++
+language: DE
+title: Info
++++
++++
+language: EN
+title: Info
++++
+

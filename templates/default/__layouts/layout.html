@@ -1,0 +1,26 @@
+
+<!DOCTYPE html>
+<html lang="{{language|lower}}">
+</html>
+<head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="STATIC:css/styles.css" />    
+    <title>{{title}}</title>
+</head>
+
+<body>
+  <nav>
+  <ul>
+    {% for page, name in '_menu'|CONTENT %}
+      <li><a href="{{page}}.html">{{name}}</a></li>
+    {% endfor %}
+    <li>&nbsp; &nbsp; &nbsp;</li>
+    <li><a href="{{'EN'|PAGE_URL}}">{{'English'|TR}}</a></li>
+    <li><a href="{{'DE'|PAGE_URL}}">{{'German'|TR}}</a></li>
+  </ul>
+  </nav>
+
+  {% block content %}{% endblock %}
+</body>
+</html>
+

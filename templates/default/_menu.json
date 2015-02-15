@@ -1,0 +1,17 @@
++++
+language: EN
++++
+
+[
+ ["index", "Home"],
+ ["info", "About"]
+]
+
++++
+language: DE
++++
+
+[
+ ["index", "Heim"],
+ ["info", "Über"]
+]

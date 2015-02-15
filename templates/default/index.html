@@ -1,0 +1,20 @@
+
+{% extends "__layouts/layout.html" %}
+
+{% block content -%}
+
+{% for article in '_index'|FRAGMENTS -%}
+{{article|CONTENT}}
+{%- endfor %}
+
+{%- endblock %}
+
++++
+language: DE
+title: Willkommen
++++
++++
+language: EN
+title: Welcome
++++
+

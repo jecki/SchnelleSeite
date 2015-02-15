@@ -1,16 +1,29 @@
-"""generator.py - loading at directory level and site generation"""
+"""generator.py - loading at directory level and site generation
+
+Copyright 2015  by Eckhart Arnold
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 
 import os
 import re
 import sys
-import warnings
+import subprocess
 
-import sitetree
 import loader
 from locale_strings import extract_locale, remove_locale
-
-
-warnings.simplefilter('always')
+import sitetree
+import tools
 
 
 ##############################################################################
@@ -29,21 +42,44 @@ exclude_patterns = [
 ]
 
 
-def is_excluded(name, site_path="", exclude_paths=set()):
+def is_excluded(name):
     """Returns true if file or directory is to be excluded from processing.
     """
-    return ((any(re.match(ptrn, name) for ptrn in exclude_patterns) and not
-             any(re.match(ptrn, name) for ptrn in include_patterns)) or
-            loader.fullpath(name, site_path) in exclude_paths)
+    return (any(re.match(ptrn, name) for ptrn in exclude_patterns) and not
+            any(re.match(ptrn, name) for ptrn in include_patterns))
 
 
-def warn(msg):
-    """Issue a warning."""
-    print(msg)
-    warnings.warn(msg, Warning)
+def is_static_entry(name, site_path, config, folder_config):
+    """Returns true, if file or subdirectory shall only be copied, but not be
+    processed."""
+    #print(config.get('static_entries', set()))
+#     if name == "apppages":
+#         print(loader.fullpath(name, site_path))
+#         print(name, site_path)
+#         print(config.get('static_entries', set()))
+#         print(name in config.get('static_entries', set()))
+    return name in folder_config.get('static_entries', set()) or \
+        loader.fullpath(name, site_path) in config.get('static_entries', set())
 
 
-def scan_directory(path, loaders, injected_metadata, parent=None):
+def get_basename(filepath):
+    """Returns the filename without path, extension, locale information or
+    order number.
+    """
+    basename, ext = os.path.splitext(os.path.basename(filepath))
+    while ext:
+        basename, ext = os.path.splitext(basename)
+    # return remove_locale(basename)
+    return re.sub(r"^\d+_", "", remove_locale(basename))
+
+
+class BadStructureError(Exception):
+    PAGE_ENTRY_IN_DATA_DIR = "Data directories should only contain fragments"\
+                             " or data, but no complete pages!"
+
+
+def scan_directory(path, loaders, injected_metadata={}, organizers=[],
+                   parent=None):
     """Reads all files in the directory path for which a loader is given
     for at least the last extension.
 
@@ -71,35 +107,44 @@ def scan_directory(path, loaders, injected_metadata, parent=None):
         loaders (dict): A mapping file extension -> loader function.
                         see load()
         injected_metadata (dict): metadata that can be accessed from templates
-        parent(sitetree.Folder): A reference to the parent folder object
+        organizers (list): A list of functions that are applied successively
+                           to all already scanned folders.
+        parent (sitetree.Folder): A reference to the parent folder object
     Returns:
         An sitetree.Folder mapping the basenames of each processed file to the
         contents as returned by the load() function.
     """
-    assert not ('basename' in injected_metadata or
-                'local' in injected_metadata)
+    assert 'local' not in injected_metadata
+    assert 'basename' not in injected_metadata
     assert not parent or isinstance(parent, sitetree.Folder)
-
-    folder = sitetree.Folder()
-    if parent:
-        folder['__parent'] = parent
-
-    old_dir = os.getcwd()
-    os.chdir(path)
 
     config = injected_metadata.get('config', {})
     site_path = config.get('site_path', '')
     languages = config.get('languages', ['ANY'])
+    is_datadir = os.path.basename(path).startswith("_")
 
+    folder = sitetree.Folder()
+    folder.parent = parent
+    folder.metadata['config'] = config
+    folder.metadata['foldername'] = get_basename(path)
+    folder.metadata['folderconfig'] = {}
+
+    old_dir = os.getcwd()
+    os.chdir(path)
     contents = os.listdir()
     contents.sort(key=str.lower)
+    for entry in contents:
+        if entry.startswith("__config."):
+            folder_cfg = loader.load_plain(entry, loader.STOCK_LOADERS)
+            folder.metadata["folderconfig"] = folder_cfg
     data_entries, data_dirs, page_dirs, page_entries = [], [], [], []
     for name in contents:
-        if name.startswith("."):
-            pass
-        if is_excluded(name, site_path, set(config.get('copyonly', []))):
+        if is_excluded(name):
             continue
-        if name.startswith('_'):
+        elif is_static_entry(name, site_path, config,
+                             folder.metadata['folderconfig']):
+            folder[name] = sitetree.StaticEntry(name)
+        elif name.startswith('_'):
             if os.path.isdir(name):
                 data_dirs.append(name)
             else:
@@ -110,32 +155,37 @@ def scan_directory(path, loaders, injected_metadata, parent=None):
             else:
                 page_entries.append(name)
 
-    def read_entry(filename):
+    def read_entry(filename, metadata):
         if os.path.isdir(filename):
-            folder[remove_locale(dirname)] = scan_directory(
-                dirname, loaders, injected_metadata, parent=folder)
+            folder[remove_locale(filename)] = scan_directory(
+                filename, loaders, metadata, parent=folder)
             return
-        basename, ext = os.path.splitext(filename)
         # generate a chain of loaders for all subsequent extensions of a
         # file (e.g. "file.markdown.jinja2") so that the loader for the
         # last extension will be applied first.
-        chain = []  # reset chain variable
-        while ext:
-            if ext in loaders:
-                chain.append(loaders[ext])
-                basename, ext = os.path.splitext(basename)
+        chainloader = loader.get_loader(filename, loaders)
+        # for debugging:
+        if chainloader == loader.passthru_loader:
+            return
+        # fp = os.path.join(os.getcwd(), filename)
+        # print("Loading file %s" % loader.fullpath(fp, site_path))
+        print("Loading file %s" % filename)
+        metadata.update({'local': folder, 'basename': get_basename(filename)})
+        pages = loader.load(filename, chainloader, injected_metadata=metadata)
+        for name, entry in pages.items():
+            if is_datadir and entry.is_page():
+                raise BadStructureError(
+                    BadStructureError.PAGE_ENTRY_IN_DATA_DIR +
+                    " Offending File: %s" % filename)
+            if name in folder:
+                # assume that other lang. versions of the entry already exist
+                assert not (set(entry.keys()) & set(folder[name].keys())), \
+                    "Overlap (ambiguity) of different language versions!\n" + \
+                    "File: " + os.path.join(os.getcwd(), filename) + \
+                    str(set(entry.keys()) & set(folder[name].keys()))
+                folder[name].update(entry)
             else:
-                warn("No loader registered for extension '%s' of file %s" %
-                     (filename, ext))
-                while ext:
-                    basename, ext = os.path.splitext(basename)
-        if chain:
-            print("Loading file %s" % filename)
-            metadata = injected_metadata.copy()
-            metadata.update({'basename': basename, 'local': folder})
-            chainloader = loader.gen_chainloader(chain)
-            folder[remove_locale(basename)] = loader.load(
-                filename, chainloader, injected_metadata=metadata)
+                folder[name] = entry
 
     def multilang(entry_name):
         """Unless the entry specifies a particular language (or 'ANY') in its
@@ -143,21 +193,27 @@ def scan_directory(path, loaders, injected_metadata, parent=None):
         entry several times, one time for each language specified in the
         configuration data of the site.
         """
-        if 'language' in injected_metadata or loader.peep_lang(entry_name):
-            read_entry(entry_name)
+        metadata = injected_metadata.copy()
+        metadata.update(folder.metadata["folderconfig"])
+        if ('language' in folder.metadata["folderconfig"] or
+                loader.peep_lang(entry_name) or os.path.isdir(entry_name)):
+            read_entry(entry_name, metadata)
         else:
             locale = extract_locale(loader.fullpath(entry_name, site_path))
             locales = [locale] if locale else languages
             for lang in locales:
                 # consider file to be of language 'lang' when reading and
                 # rendering templates
-                injected_metadata['language'] = lang
-                read_entry(entry_name)
-            del injected_metadata['language']
+                metadata['language'] = lang
+                read_entry(entry_name, metadata)
 
     for filename in data_entries:
         multilang(filename)
-    for dirname in data_dirs + page_dirs:
+    for dirname in data_dirs:
+        multilang(dirname)
+        for organizer in organizers:
+            organizer(dirname)
+    for dirname in page_dirs:
         multilang(dirname)
     for filename in page_entries:
         multilang(filename)
@@ -168,63 +224,173 @@ def scan_directory(path, loaders, injected_metadata, parent=None):
 
 ###############################################################################
 #
+# reorganize items
+#
+###############################################################################
+
+def reorganize_site(root, organizers=[]):
+    """Traverses the site tree and applies organizers to its folders."""
+    # TODO: Implement this function!!!
+    pass
+
+
+###############################################################################
+#
 # write site
 #
 ###############################################################################
 
 
-def create_site():
+#
+# writers
+#
+
+def remove_trailing_spaces(root, content):
+    """Returns a version of text where all trailing spaces are removed"""
+    return re.sub(" +\n", "\n", content)
+
+
+def fillin_URL_templates(root, content):
+    """Replaces URLs in href attributes that start with 'STATIC:' or
+    'TOPLEVEL:' with proper relative URLs.
+    TOPLEVEL means 'the highest level in the same language branch'
+    STATIC means 'the root level of the site'
+    """
+    steps = []
+    while root.parent:
+        steps.append("..")
+        root = root.parent
+    toplevel = "/".join(steps) + "/"
+    steps.append("..")
+    static = "/".join(steps) + "/"
+
+    content = re.sub('href *= *"STATIC:/?', 'href="' + static, content)
+    content = re.sub('src *= *"STATIC:/?', 'src="' + static, content)
+    content = re.sub('href *= *"TOPLEVEL:/?', 'href="' + toplevel, content)
+    content = re.sub('src *= *"TOPLEVEL:/?', 'src="' + toplevel, content)
+    return content
+
+
+def add_img_width_height(root, content):
+    """Adds with and height attributes to image tags.
+    """
+    # TODO: program this function
     pass
 
+STOCK_WRITERS = [remove_trailing_spaces,
+                 fillin_URL_templates]
+
+
+#
+# preprocessors
+#
+
+STOCK_PREPROCESSORS = {}
+
+try:
+    subprocess.check_output(["lessc", "--help"])
+
+    def less_preprocessor(src, dst):
+        """Preprocesses less stylesheet with less.js (http://lesscss.org/) at
+        location src and writes the result to 'dst'.
+        """
+        css = subprocess.check_output(["lessc", "-x", src])
+        with open(os.path.splitext(dst)[0] + '.css', "wb") as css_file:
+            css_file.write(css)
+
+    STOCK_PREPROCESSORS[".less"] = less_preprocessor
+
+except FileNotFoundError:
+    pass
+
+
+if ".less" not in STOCK_PREPROCESSORS:
+    # lesscpy only second choice, because version 0.10.2 is still buggy :(
+    try:
+        import six
+        import lesscpy
+
+        def lesscpy_preprocessor(src, dst):
+            """Preprocesses less stylesheet with lesscpy
+            (https://pypi.python.org/pypi/lesscpy) at location src and writes
+            the result to 'dst'.
+            """
+            with open(src) as less_file:
+                less_data = less_file.read()
+                css = lesscpy.compile(six.StringIO(less_data), minify=True)
+            with open(os.path.splitext(dst)[0] + '.css', "w") as css_file:
+                css_file.write(css)
+
+        STOCK_PREPROCESSORS[".less"] = lesscpy_preprocessor
+
+    except ImportError:
+        pass
+
+#
+# site creation
+#
+
+
+def create_site(root, site_path,
+                writers=STOCK_WRITERS,
+                preprocessors=STOCK_PREPROCESSORS):
+    """Writes a a website or folder of a website stored in a sitetree structure
+    to the disk.
+
+    Parameters:
+        root (sitetree.Folder): The tree representing the website
+        site_path(string): Path where the website should be stored
+        writers(list): A list of writer functions
+            (root, current_content) -> content that can manipulate content
+            (like replace special tokens or keywords like "STATIC") just before
+            writing them to the disk.
+    """
+    assert isinstance(root, sitetree.Folder)
+
+    def create_static_entries(root, path):
+        for entry in root:
+            if isinstance(root[entry], sitetree.StaticEntry):
+                root[entry].copy_entry(path, preprocessors)
+                print("Copying static entries " + entry)
+            elif isinstance(root[entry], sitetree.Folder):
+                create_static_entries(root[entry], os.path.join(path, entry))
+
+    def create_branch(root, path, lang, writers):
+        with tools.create_and_enter_dir(path):
+            print("Creating directory " + path)
+            for entry in root:
+                if entry.startswith("_"):
+                    continue
+                if isinstance(root[entry], sitetree.Folder):
+                    if not os.path.exists(entry):
+                        os.mkdir(entry)
+                    create_branch(root[entry], entry, lang, writers)
+                elif not isinstance(root[entry], sitetree.StaticEntry):
+                    if root[entry].is_data() or root[entry].is_fragment():
+                        print("%s is not an html page!" % entry)
+                    else:
+                        with open(entry + ".html", "w") as f:
+                            content = root[entry].bestmatch(lang)['content']
+                            for wr in writers:
+                                content = wr(root, content)
+                            f.write(content)
+                            print("Writing file " + entry + ".html")
+
+    with tools.create_and_enter_dir(site_path):
+        create_static_entries(root, "")
+        for lang in root.metadata.get('config', {}).get('languages', ['ANY']):
+            create_branch(root, lang, lang, writers)
+
+
 ###############################################################################
 #
-# test code
+# main function
 #
 ###############################################################################
 
 
-def test_load():
-    """Simple Test for load()-function."""
-    old_dir = os.getcwd()
-    generator = sitetree.Folder()
-    generator['_data'] = scan_directory("_data",
-                                        {".yaml": loader.yaml_loader,
-                                         ".csv": loader.csv_loader,
-                                         ".ttbl": loader.load_transtable},
-                                        {'language': 'ANY'})
-    os.chdir("tests/testdata")
-    bibdata = loader.load("_bibdata_ANY.bib", loader.bibtex_loader,
-                          injected_metadata={'config': {"template_paths":
-                                                        ["../../"],
-                                                        "site_path": ""}})  # sys.argv[1] if len(sys.argv) > 1 else os.getcwd()}})
-    result = loader.load("Kants_Friedensschrift.md.jinja2",
-                         loader.gen_chainloader([loader.jinja2_loader,
-                                                 loader.markdown_loader]),
-                         injected_metadata={'basename': "Kants_Friedensschrift",
-                                            'local': {"_bibdata": bibdata},
-                                            'config': {"template_paths":
-                                                       ["../../"],
-                                                       "site_path": sys.argv[1] if len(sys.argv) > 1 else os.getcwd()},
-                                            'root': generator})
-    for lang in result:
-        print(result[lang]['content'])
-    os.chdir(old_dir)
-
-
-def test_scan_directory(metadata):
-    """Simple Test for scan_directory()-function."""
-    tree = scan_directory("./", loader.STOCK_LOADERS, metadata)
-    for lang in ["DE", "EN"]:
-        with open("output_%s.html" % lang, "w") as out:
-            out.write(
-                '<html>\n<head>\n<meta charset="utf-8"/>\n</head>\n<body>\n')
-            for page in tree:
-                if lang in tree[page]:
-                    out.write(str(tree[page][lang]['content']))
-            out.write("\n</body>\n</html>\n")
-
-
-if __name__ == "__main__":
-    # print("hi")
-    test_load()
-    # test_scan_directory()
+def generate_site(path, metadata):
+    """Generates the site from the source at 'path'.
+    """
+    tree = scan_directory(path, loader.STOCK_LOADERS, metadata)
+    create_site(tree, os.path.join(path, '__site'), STOCK_WRITERS)

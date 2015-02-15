@@ -1,0 +1,5 @@
+languages: [DE, EN]
+static_entries:
+    - images
+    - css
+    - js

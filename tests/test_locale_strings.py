@@ -2,6 +2,7 @@
 import os
 import sys
 import unittest
+from locale_strings import *
 
 # import locale_strings  --> see below
 
@@ -44,8 +45,8 @@ class TestLocaleStrings(unittest.TestCase):
         self.assertEqual(extract_locale("alpha/beta_DE/gamma_ANY.txt"), "ANY")
 
 
-if __name__ == "__main__":
-    sys.path.append(
-        os.path.split(os.path.dirname(os.path.abspath(sys.argv[0])))[0])
-    from locale_strings import *
-    unittest.main()
+# if __name__ == "__main__":
+#     sys.path.append(
+#         os.path.split(os.path.dirname(os.path.abspath(sys.argv[0])))[0])
+#     from locale_strings import *
+#     unittest.main()

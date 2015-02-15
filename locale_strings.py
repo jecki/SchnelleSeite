@@ -1,3 +1,17 @@
+"""Copyright 2015  by Eckhart Arnold
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 
 
 import os
@@ -158,7 +172,7 @@ def get_locale(name):
 
 def extract_locale(filepath):
     """Extracts locale information from filename or parent directory.
-    Returns locale string or 'any'.
+    Returns locale string or ''.
 
     Locale information is assumed to reside at the end of the basename of the
     file, right before the extension. It must either have the form "_xx_XX" or
@@ -190,8 +204,11 @@ def remove_locale(name):
     assert name.find(os.path.sep) == -1
     pos = name.rfind(".")
     basename = name[:pos] if pos >= 0 else name
-    locale = get_locale(basename)
-    if locale:
-        return basename[:-len(locale) - 1] + (name[pos:] if pos >= 0 else "")
-    else:
-        return name
+    try:
+        locale = get_locale(basename)
+        if locale:
+            return (basename[:-len(locale) - 1] +
+                    (name[pos:] if pos >= 0 else ""))
+    except LocaleError:
+        pass
+    return name
