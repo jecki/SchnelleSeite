@@ -251,6 +251,24 @@ def add_bib_strings(bib, bibentry_to_strs):
         entry["bib_full"] = bib_full
 
 
+json_ld_book = """
+<script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "Book",
+  "name": "{Title}",
+  "author": "{Author}",
+  "editor": "{Editor}",
+  "publisher": "{Publisher}",
+  "datePublished" : "{Year}",
+  "contentLocation": "{Address}",
+  "url": "{Url}",
+  "about": "{Keywords}"
+}
+</script>
+"""
+
+
 def bibtex_loader(data, metadata, bibentry_to_strs=bib_strings):
     """Scans the bibtex-data contained in string text and returns it as
     nested dictionary indexed by the entry names on the first level.

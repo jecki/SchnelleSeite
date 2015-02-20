@@ -20,6 +20,7 @@ limitations under the License.
 import os
 import sys
 import shutil
+import webbrowser
 
 import yaml
 
@@ -95,3 +96,5 @@ if __name__ == "__main__":
         path = os.path.abspath(
             sys.argv[1] if len(sys.argv) > 1 else os.getcwd())
         make_project(path)
+
+    webbrowser.open(os.path.join(path, "__site/index.html"))

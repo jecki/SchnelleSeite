@@ -181,7 +181,7 @@ def scan_directory(path, loaders, injected_metadata={}, organizers=[],
                 # assume that other lang. versions of the entry already exist
                 assert not (set(entry.keys()) & set(folder[name].keys())), \
                     "Overlap (ambiguity) of different language versions!\n" + \
-                    "File: " + os.path.join(os.getcwd(), filename) + \
+                    "File: " + os.path.join(os.getcwd(), filename) + " " +\
                     str(set(entry.keys()) & set(folder[name].keys()))
                 folder[name].update(entry)
             else:
