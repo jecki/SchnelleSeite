@@ -178,6 +178,11 @@ def bib_strings(entry, lang):
     entry_dict = {"Address": "", "Publisher": ""}
     entry_dict.update(entry)
     entry_dict.update(trans_table[lang])
+
+    # special patch
+    if entry_dict.get('Pages') == "forthcoming" and lang.upper() == "DE":
+        entry_dict['Pages'] = "im Erscheinen"
+
     if entry["type"] == "Book":
         if "Author" in entry and "Editor" in entry:
             bib_full = "{Author}: {Title}, {ed_by} {Editor}," \
