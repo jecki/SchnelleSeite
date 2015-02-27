@@ -18,16 +18,14 @@ limitations under the License.
 """
 
 import os
-import sys
 import shutil
+import sys
 import webbrowser
 
 import yaml
 
 import generator
 import loader
-
-
 helptxt = """SchnelleSeite - A static site generator.
 
 Usage:
@@ -96,5 +94,6 @@ if __name__ == "__main__":
         path = os.path.abspath(
             sys.argv[1] if len(sys.argv) > 1 else os.getcwd())
         make_project(path)
-
-    webbrowser.open(os.path.join(path, "__site/index.html"))
+        fullpath = os.path.join(path, "__site/EN/index.html")
+        print("showing " + fullpath)
+        webbrowser.open(fullpath)

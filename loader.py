@@ -27,13 +27,11 @@ import os
 import markdown
 import yaml
 
-from jinja2_loader import jinja2_loader
 from bibloader import bibtex_loader
+from jinja2_loader import jinja2_loader
 from loader_utility import collect_fragments
 import locale_strings
 import sitetree
-
-
 __update__ = "2014-12-06"
 
 
@@ -329,8 +327,26 @@ def _multicast_groups(subpages, metadata):
         a list of lists where each list represents one group of
         subpages that is to appear on one output page.
     """
-    n = metadata.get('items_per_page', 1)
-    return [subpages[k:k + n] for k in range(0, len(subpages), n)]
+    n = metadata.get('MC_PAGINATION', 1)
+    if n < 1000:
+        # interpret pagination parameter as number of items per page
+        return [subpages[k:k + n] for k in range(0, len(subpages), n)]
+    else:
+        # interpret pagination parameter as size, i.e. number of characters
+        # per page
+        groups = []
+        group = []
+        cnt = 0
+        for sp in subpages:
+            size = len(sp)
+            if len(group) == 0 or size + cnt <= n:
+                group.append(sp)
+                cnt += size
+            else:
+                groups.append(group)
+                group = [sp]
+                cnt = size
+        return groups
 
 
 def _multicast_pagenames(basename, groups, metadata):
@@ -341,19 +357,25 @@ def _multicast_pagenames(basename, groups, metadata):
         groups(list): a list of groups of subpages
         metadata(dict): the metadata dict of the multicast page
     """
+    def gen_page_name(group):
+        return basename + "_" + group[0].split("/")[-1]
+
     # the first output page always has the name of the multicast page
     page_names = {groups[0][0]: basename}
     if all(len(group) == 1 for group in groups):
         # use output pagename as suffix for single page groups
         for group in groups[1:]:
-            page_names[group[0]] = basename + "_" + group[0].split("/")[-1]
+            page_names[group[0]] = gen_page_name(group)
     else:
         # generate a page number as suffix otherwise
         # fill up page numbers with zeros from the left
-        fmtstr = "_%0{0}i".format(int(math.log10(len(groups))) + 1)
-        for i, group in enumerate(groups[1:], 2):
-            for subpage in group:
-                page_names[subpage] = basename + fmtstr % i
+        # fmtstr = "_%0{0}i".format(int(math.log10(len(groups))) + 1)
+        # for i, group in enumerate(groups[1:], 2):
+        #     for subpage in group:
+        #         page_names[subpage] = basename + fmtstr % i
+        for group in groups[1:]:
+            for fragment in group:
+                page_names[fragment] = gen_page_name(group)
     return page_names
 
 
@@ -494,8 +516,9 @@ def load(filepath,
         metadata['MC_PAGES'] = len(groups)
         metadata['MC_PAGENAMES'] = page_names
         output_pages = collections.OrderedDict()
-        for group in groups:
+        for pagenr, group in enumerate(groups, 1):
             metadata['MC_CURRENT_BATCH'] = group
+            metadata['MC_CURRENT_PAGE'] = pagenr
             metadata['basename'] = page_names[group[0]]
             output_pages[page_names[group[0]]] = _gen_entry(
                 filepath, metadata_headers, data_chunks,

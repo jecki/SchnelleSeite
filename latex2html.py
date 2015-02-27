@@ -26,14 +26,12 @@ TODO: Support for mathematical formulars and MathML
 """
 
 
-import sys
 import os
-import time
-import string
 import re
-
+import string
+import sys
+import time
 # Globals and predefined constants
-
 PROJECT_TITLE = "title ?"
 TOC_TITLE = "Table of Contents"
 BIBLIOGRAPHY_TITLE = "Bibliography"
@@ -159,7 +157,7 @@ IMAGENames = []
 SCALEFactors = {}
 
 
-class ScannerError:
+class ScannerError(Exception):
 
     def __init__(self, error="Scanner Error"):
         self.error = error
@@ -695,7 +693,7 @@ TermWSequence = TermPSequence + ["", "\\footnote{",  # "\\caption{"
                                  "\\begin{verbatim}", "\\end{verbatim}"]
 
 
-class ParserError:
+class ParserError(Exception):
 
     def __init__(self, error="Parser Error"):
         self.error = error

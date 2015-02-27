@@ -1,0 +1,16 @@
+nav ul {
+	list-style-type: none;
+	margin:0;
+	padding:0;
+	background-color: black;
+	color: white;
+}
+
+nav ul li {
+    display: inline;
+    font-weight: bold;	
+}
+
+nav ul li a:visited {
+	color: white;
+}
