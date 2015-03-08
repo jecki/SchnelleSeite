@@ -17,7 +17,6 @@ limitations under the License.
 
 import os
 import re
-import sys
 import subprocess
 
 import loader
@@ -222,16 +221,16 @@ def scan_directory(path, loaders, injected_metadata={}, organizers=[],
     return folder
 
 
-###############################################################################
-#
+# ###############################################################################
+# #
 # reorganize items
+# #
+# ###############################################################################
 #
-###############################################################################
-
-def reorganize_site(root, organizers=[]):
-    """Traverses the site tree and applies organizers to its folders."""
-    # TODO: Implement this function!!!
-    pass
+# def reorganize_site(root, organizers=[]):
+#     """Traverses the site tree and applies organizers to its folders."""
+# TODO: Implement this function!!!
+#     pass
 
 
 ###############################################################################

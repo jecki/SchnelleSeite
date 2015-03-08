@@ -22,7 +22,7 @@ import jinja2
 import markdown
 
 import sitetree
-from loader_utility import translate, collect_fragments
+from utility import translate, collect_fragments
 
 
 ##############################################################################

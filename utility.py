@@ -1,4 +1,5 @@
-"""loader_utility.py -- utility functions that might be useful for loaders
+"""utility.py -- utility functions that might be useful for loaders, 
+    postprocessors and the like
 
 Copyright 2015  by Eckhart Arnold
 
@@ -15,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-
+import re
 import sitetree
 
 
@@ -47,3 +48,43 @@ def collect_fragments(folder, foldername, order):
             key=lambda item: folder[item].bestmatch('ANY')['metadata'][order],
             reverse=True)
     return [foldername + "/" + entry for entry in fragments]
+
+
+RX_HTML_COMMENTS = re.compile("<!--.*?-->")
+
+
+def segment_data(data, regexp):
+    """Splits the data string into segments that either match or do not match
+    the regular expression 'regexp'. Other than re.split() (or "".split()),
+    which leave out the separation string, the segments matching 'regexp'
+    are included in the result.
+
+    Args:
+        data (string): the data to be segmented, e.g. an HTML page
+        regexp (string or regex object): a regular expression object or string
+            that is used to divide the data into segments.
+
+    Returns:
+        (list, list). A tuple of a list of segments and a list of those indices
+            that match 'regexp'
+
+    Example:
+        >>> segment_data("Text <h1>HEADING</h1> More Text", "<h1>.*?</h1>")
+        (["Text ", "<h1>HEADING</h1>", " More Text" ], [2])
+    """
+    if isinstance(regexp, str):
+        regexp = re.compile(regexp)
+    segments = []
+    indices = []
+    pos = 0
+    for match in regexp.finditer(data):
+        start = match.start()
+        end = match.end()
+        if start > pos:
+            segments.append(data[pos:start])
+        indices.append(len(segments))
+        segments.append(data[start:end])
+        pos = end
+    if pos < len(data):
+        segments.append(data[pos:])
+    return (segments, indices)
