@@ -18,6 +18,7 @@ limitations under the License.
 
 import re
 import sitetree
+from cgitb import html
 
 
 def translate(expression, lang, folder, generator_resources):
@@ -51,6 +52,7 @@ def collect_fragments(folder, foldername, order):
 
 
 RX_HTML_COMMENTS = re.compile("<!--.*?-->")
+RX_ATTRIBUTES = re.compile(' ([a-zA-Z]+?) *?= *?["\'](.*?)["\']')
 
 
 def segment_data(data, regexp):
@@ -65,26 +67,51 @@ def segment_data(data, regexp):
             that is used to divide the data into segments.
 
     Returns:
-        (list, list). A tuple of a list of segments and a list of those indices
-            that match 'regexp'
+        list. A list of segments.
 
     Example:
         >>> segment_data("Text <h1>HEADING</h1> More Text", "<h1>.*?</h1>")
-        (["Text ", "<h1>HEADING</h1>", " More Text" ], [2])
+       ["Text ", "<h1>HEADING</h1>", " More Text" ]
     """
     if isinstance(regexp, str):
         regexp = re.compile(regexp)
     segments = []
-    indices = []
     pos = 0
     for match in regexp.finditer(data):
         start = match.start()
         end = match.end()
         if start > pos:
             segments.append(data[pos:start])
-        indices.append(len(segments))
         segments.append(data[start:end])
         pos = end
     if pos < len(data):
         segments.append(data[pos:])
-    return (segments, indices)
+    return segments
+
+
+def get_attributes(data, pos):
+    """Returns a dictionary of all attributes and their values of the html
+    tag that starts at position pos in string 'data'. All attribute names are
+    converted to lower case.
+    """
+    assert data[pos] == "<"
+    endpos = data.find(">", pos)
+    assert endpos > pos
+    return {key.lower(): value
+            for (key, value) in RX_ATTRIBUTES.findall(data, pos, endpos)}
+
+
+def set_attributes(data, pos, attributes):
+    """Sets the attributes of the html tag at pos in string data to those
+    stored in the 'attributes' dictionary. Any existing attributes will be
+    overwritten or deleted.
+    """
+    assert data[pos] == "<"
+    endpos = data.find(">", pos)
+    assert endpos > pos
+    start = data.find(" ", pos)
+    if start < 0:
+        start = endpos
+    attr_list = ['%s="%s"' % (key, attributes[key]) for key in attributes]
+    attr_str = " " + " ".join(attr_list) + " "
+    data = data[:start] + attr_str + data[endpos:]

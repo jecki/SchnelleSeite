@@ -31,7 +31,9 @@ from bibloader import bibtex_loader
 from jinja2_loader import jinja2_loader
 import locale_strings
 import sitetree
-from utility import collect_fragments, segment_data, RX_HTML_COMMENTS
+from utility import collect_fragments, segment_data, RX_HTML_COMMENTS, \
+    set_attributes, get_attributes
+
 __update__ = "2015-03-07"
 
 
@@ -211,7 +213,7 @@ def get_loader(filename, loaders):
 
 RX_PERMALINK_CLASS = re.compile('class *?= *?["\']permalink["\']',
                                 re.IGNORECASE)
-RX_ID = re.compile('id *?= *?["\'](?P<id>.*?)["\']', re.IGNORECASE)
+#RX_ID = re.compile('id *?= *?["\'](?P<id>.*?)["\']', re.IGNORECASE)
 RX_TAG = re.compile("<.*?>")
 
 
@@ -247,10 +249,6 @@ def permalinks(data, args, metadata):
         text = RX_TAG.sub("", heading[start:end])
         return re.sub(r"\W", "-", text)
 
-    def add_id(heading, h_id):
-        pos = heading.find(">")
-        return heading[:pos] + (' id="%s"' % h_id) + heading[pos:]
-
     headings = parse_args(args)
     hstr = "".join([str(h) for h in headings])
     print(">>> " + hstr)
@@ -262,13 +260,10 @@ def permalinks(data, args, metadata):
         for i in header_indices:
             if not permalink_exists(parts[i]):
                 end = parts[i].find(">")
-                m = RX_ID.search(parts[i], 0, end)
-                if m:
-                    h_id = m.group("id")
-                    print("<<< " + h_id)
-                else:
-                    h_id = gen_id(parts[i])
-                    parts[i] = add_id(parts[i], h_id)
+                attributes = get_attributes(parts[i], 0)
+                if "id" not in attributes:
+                    attributes['id'] = gen_id(parts[i])
+                parts[i] = set_attributes(parts[i], attributes)
                 pos = parts[i].rfind("<")
                 link = '&nbsp;<a class="permalink" href="#%s">¶</a>' % h_id
                 parts[i] = parts[i][:pos] + link + parts[i][pos:]
