@@ -19,10 +19,11 @@ limitations under the License.
 import collections
 import csv
 import functools
+import inspect
 import io
 import json
 import os
-import re
+import sys
 
 import markdown
 import yaml
@@ -31,8 +32,8 @@ from bibloader import bibtex_loader
 from jinja2_loader import jinja2_loader
 import locale_strings
 import sitetree
-from utility import collect_fragments, segment_data, RX_HTML_COMMENTS, \
-    set_attributes, get_attributes
+from permalinks import permalinks
+from utility import collect_fragments
 
 __update__ = "2015-03-07"
 
@@ -110,6 +111,15 @@ def csv_loader(text, metadata):
         reader = csv.reader(csvfile, dialect)
         table = list(reader.__iter__())
     return table
+
+
+def python_loader(text, metadata):
+    """A loader for python code.
+    """
+    cwd = os.getcwd()
+    if cwd not in sys.path:
+        sys.path.append(cwd)
+    exec("import " + metadata['basename'])
 
 
 class RedundantTransTable(Exception):
@@ -211,71 +221,6 @@ def get_loader(filename, loaders):
 ##############################################################################
 
 
-RX_PERMALINK_CLASS = re.compile('class *?= *?["\']permalink["\']',
-                                re.IGNORECASE)
-#RX_ID = re.compile('id *?= *?["\'](?P<id>.*?)["\']', re.IGNORECASE)
-RX_TAG = re.compile("<.*?>")
-
-
-def permalinks(data, args, metadata):
-
-    def parse_args(args):
-        # TODO: Check for correct syntax with regular expression
-        headings = set()
-        parts = args.split(",")
-        for part in parts:
-            rng = part.split("-")
-            a = int(rng[0][1])
-            if len(rng) > 1:
-                b = int(rng[1][1])
-                if a > b:
-                    a, b = b, a
-                headings |= set(range(a, b + 1))
-            else:
-                headings.add(a)
-        return headings
-
-    def permalink_exists(heading):
-        if RX_PERMALINK_CLASS.search(heading):
-            print("Warning, permanent link already exists in: " + heading)
-            return True
-        if heading[-9:-5].lower() == "</a>":
-            print("Remark, maybe %s already has a permalink?" % heading)
-        return False
-
-    def gen_id(heading):
-        start = heading.find(">") + 1
-        end = heading.rfind("<")
-        text = RX_TAG.sub("", heading[start:end])
-        return re.sub(r"\W", "-", text)
-
-    headings = parse_args(args)
-    hstr = "".join([str(h) for h in headings])
-    print(">>> " + hstr)
-    rx_htags = re.compile("<h[%s].*?>.*?</h[%s]>" %
-                          (hstr, hstr), re.IGNORECASE)
-
-    def add_permalinks(segment):
-        parts, header_indices = segment_data(segment, rx_htags)
-        for i in header_indices:
-            if not permalink_exists(parts[i]):
-                end = parts[i].find(">")
-                attributes = get_attributes(parts[i], 0)
-                if "id" not in attributes:
-                    attributes['id'] = gen_id(parts[i])
-                parts[i] = set_attributes(parts[i], attributes)
-                pos = parts[i].rfind("<")
-                link = '&nbsp;<a class="permalink" href="#%s">¶</a>' % h_id
-                parts[i] = parts[i][:pos] + link + parts[i][pos:]
-        return "".join(parts)
-
-    segments, comment_indices = segment_data(data, RX_HTML_COMMENTS)
-    comment_indices_set = set(comment_indices)
-    for i in range(len(segments)):
-        if i not in comment_indices_set:
-            segments[i] = add_permalinks(segments[i])
-    return "".join(segments)
-
 POSTPROCESSORS = {"PERMALINKS": permalinks}
 
 
@@ -300,11 +245,22 @@ def gather_postprocessors(metadata):
     Example: If the metadata contains the directive `PERMALINKS: H1-H3` then
     this generates the postprocessor call `permalinks(data, "H1-H3", metadata)`
     """
-    ppl = [key for key in POSTPROCESSORS if key in metadata]
+    post_processors = POSTPROCESSORS.copy()
+    post_processor_list = [key[len("POSTPROCESSOR_"):] for key in metadata
+                           if key.startswith("POSTPROCESSOR")]
+    for key in post_processor_list:
+        value = metadata['POSTPROCESSOR_' + key]
+        if inspect.isfunction(value):
+            post_processors[key] = value
+        else:
+            module = value.split('.')[0]
+            exec("import " + module + "; post_processors[key] = " + value)
+            metadata['POSTPROCESSOR_' + key] = post_processors[key]
+    post_processor_list += [key for key in POSTPROCESSORS if key in metadata]
 
     def postprocessor(data):
-        for key in ppl:
-            data = POSTPROCESSORS[key](data, metadata[key], metadata)
+        for key in post_processor_list:
+            data = post_processors[key](data, metadata.get(key, ""), metadata)
         return data
     return postprocessor
 
@@ -323,7 +279,8 @@ STOCK_LOADERS = {".bib": bibtex_loader,
                  ".json": json_loader,
                  ".md": markdown_loader,
                  ".ttbl": load_transtable,
-                 ".yaml": yaml_loader}
+                 ".yaml": yaml_loader,
+                 ".py": python_loader}
 
 
 def peep_lang(filename, md_loader=yaml_loader, delimiter="+++"):
@@ -377,6 +334,13 @@ def _gen_entry(filepath, metadata_headers, data_chunks,
     """Generates an entry for the site tree from an already split page
     (see function load()).
     """
+    def postprocess(common_data, raw_data, metadata):
+        if metadata['basename'].startswith("_"):
+            return data_loader(common_data + raw_data, metadata)
+        else:
+            pp = gather_postprocessors(metadata)
+            return pp(data_loader(common_data + raw_data, metadata))
+
     entry = sitetree.Entry()
     common_metadata = {}
     common_data = ""
@@ -397,11 +361,9 @@ def _gen_entry(filepath, metadata_headers, data_chunks,
                 raise MalformedFile(MalformedFile.LANGUAGE_INFO_MISSING +
                                     "\nheader data:\n" + raw_metadata)
         else:
-            postprocess = gather_postprocessors(metadata)
-            cnt = postprocess(data_loader(common_data + raw_data, metadata))
             variant = {
                 'metadata': metadata,
-                'content': cnt
+                'content': postprocess(common_data, raw_data, metadata)
             }
             if metadata['language'] in entry:
                 raise MalformedFile(
@@ -419,10 +381,8 @@ def _gen_entry(filepath, metadata_headers, data_chunks,
             fullpath(filepath, site_path)))
         if not lang:
             raise MalformedFile(MalformedFile.LANGUAGE_INFO_MISSING)
-        postprocess = gather_postprocessors(metadata)
-        cnt = postprocess(data_loader(common_data, common_metadata))
         entry[lang] = {'metadata': metadata,
-                       'content': cnt}
+                       'content': postprocess(common_data, raw_data, metadata)}
     return entry
 
 

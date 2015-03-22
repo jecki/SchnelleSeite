@@ -1,4 +1,4 @@
-"""utility.py -- utility functions that might be useful for loaders, 
+"""utility.py -- utility functions that might be useful for loaders,
     postprocessors and the like
 
 Copyright 2015  by Eckhart Arnold
@@ -18,10 +18,9 @@ limitations under the License.
 
 import re
 import sitetree
-from cgitb import html
 
 
-def translate(expression, lang, folder, generator_resources):
+def raw_translate(expression, lang, folder, generator_resources):
     """Search for a translation of 'expression' into language 'lang'.
 
     The search starts in 'folder', continues through 'folder's parent folders
@@ -36,6 +35,14 @@ def translate(expression, lang, folder, generator_resources):
         else:
             raise err
     return tr
+
+
+def translate(expression, metadata):
+    """Search for a translation of 'expression' into the language set in the
+    metadata.
+    """
+    return raw_translate(expression, metadata['language'], metadata['local'],
+                         metadata['config']['generator_resources'])
 
 
 def collect_fragments(folder, foldername, order):
@@ -72,6 +79,9 @@ def segment_data(data, regexp):
     Example:
         >>> segment_data("Text <h1>HEADING</h1> More Text", "<h1>.*?</h1>")
        ["Text ", "<h1>HEADING</h1>", " More Text" ]
+
+    Use the following code to determine the offset of the first matching
+    segment:  first = 0 if regexp.match(data) else 1
     """
     if isinstance(regexp, str):
         regexp = re.compile(regexp)
@@ -87,6 +97,31 @@ def segment_data(data, regexp):
     if pos < len(data):
         segments.append(data[pos:])
     return segments
+
+
+def matching_segment_range(segments, regexp, invert=False):
+    """Returns a range object that yields the indices of those segments that
+    match 'regexp' from all segments that are returned by function
+    'segment_data'.
+
+    Args:
+        segments (list): List of segments as returned by function
+            'segment_data'.
+        regexp (string or regex object): the regular expression object or
+            string that has been used to divide the data into segments with
+            function 'segment_data'.
+        invert(boolean): If True, return the range of segments that do not
+            match regexp
+
+    Returns:
+        range object. Indices of the matching segments.
+    """
+    if isinstance(regexp, str):
+        regexp = re.compile(regexp)
+    if invert:
+        return range(1 if regexp.match(segments[0]) else 0, len(segments), 2)
+    else:
+        return range(0 if regexp.match(segments[0]) else 1, len(segments), 2)
 
 
 def get_attributes(data, pos):
@@ -109,9 +144,10 @@ def set_attributes(data, pos, attributes):
     assert data[pos] == "<"
     endpos = data.find(">", pos)
     assert endpos > pos
-    start = data.find(" ", pos)
+    start = data.find(" ", pos, endpos)
     if start < 0:
         start = endpos
     attr_list = ['%s="%s"' % (key, attributes[key]) for key in attributes]
     attr_str = " " + " ".join(attr_list) + " "
     data = data[:start] + attr_str + data[endpos:]
+    return data

@@ -80,6 +80,8 @@ def make_project(path):
         raise ValueError("Illegal keys in '__site-config': {0!s}".
                          format(overlap))
     config.update(cfg)
+    if 'languages' not in config:
+        config['languages'] = ['EN']
 
     generator.generate_site(SITE_PATH, {'config': config})
 

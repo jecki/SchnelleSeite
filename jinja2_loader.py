@@ -43,8 +43,7 @@ def jinja2_translate(env, expression):
     This requires that the variables 'local', 'language' and 'root' are
     defined in the jinja2 environment.
     """
-    return translate(expression, env.globals['language'], env.globals['local'],
-                     env.globals['config']['generator_resources'])
+    return translate(expression, env.globals)
 
 
 @jinja2.environmentfilter
