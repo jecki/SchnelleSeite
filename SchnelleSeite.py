@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-"""SchnelleSeite - A static site generator for multilingual websites 
+"""SchnelleSeite - A static site generator for multilingual websites
 
 Copyright 2015  by Eckhart Arnold
 

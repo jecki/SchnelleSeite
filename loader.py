@@ -31,9 +31,10 @@ import yaml
 from bibloader import bibtex_loader
 from jinja2_loader import jinja2_loader
 import locale_strings
-import sitetree
 from permalinks import permalinks
+import sitetree
 from utility import collect_fragments
+
 
 __update__ = "2015-03-07"
 
@@ -334,6 +335,22 @@ def _gen_entry(filepath, metadata_headers, data_chunks,
     """Generates an entry for the site tree from an already split page
     (see function load()).
     """
+
+    def add_metadata_from_subpages(metadata, lang):
+        """Adds additional metadata from subpages to the 'metadata' dict
+        and returns the enriched dict. The precedence rule is existing (i.e.
+        main page) metata over subpage metadata and metadata from earlier
+        subpages over metadata from later subpages.
+        """
+        group = metadata.get("MC_CURRENT_BATCH", [])
+        for path in group:
+            entry = sitetree.getentry(metadata['local'], path, lang)
+            for key, value in entry['metadata'].items():
+                if key not in metadata:
+                    print("----", path, key)
+                    metadata[key] = value
+        return metadata
+
     def postprocess(common_data, raw_data, metadata):
         if metadata['basename'].startswith("_"):
             return data_loader(common_data + raw_data, metadata)
@@ -362,7 +379,8 @@ def _gen_entry(filepath, metadata_headers, data_chunks,
                                     "\nheader data:\n" + raw_metadata)
         else:
             variant = {
-                'metadata': metadata,
+                'metadata': add_metadata_from_subpages(metadata,
+                                                       metadata['language']),
                 'content': postprocess(common_data, raw_data, metadata)
             }
             if metadata['language'] in entry:
@@ -381,8 +399,8 @@ def _gen_entry(filepath, metadata_headers, data_chunks,
             fullpath(filepath, site_path)))
         if not lang:
             raise MalformedFile(MalformedFile.LANGUAGE_INFO_MISSING)
-        entry[lang] = {'metadata': metadata,
-                       'content': postprocess(common_data, raw_data, metadata)}
+        entry[lang] = {'metadata': add_metadata_from_subpages(metadata, lang),
+                       'content': postprocess(common_data, "", metadata)}
     return entry
 
 
@@ -391,8 +409,8 @@ def _multicast_groups(subpages, metadata):
     to hints given in the metadata.
     Arguments:
         subpages(list): list of subpages of the multicast page
-        metadata(dict): the metadata dictionary of the multicast 
-            page. The only control parameters so far is: 
+        metadata(dict): the metadata dictionary of the multicast
+            page. The only control parameters so far is:
             'items_per_page'
     Returns:
         a list of lists where each list represents one group of
@@ -479,7 +497,7 @@ def load(filepath,
 
     if b) the file as a whole represents a specific language version, the
     language code can - instead of putting it in the metadata - also be added
-    to the file name between the basename and the file extension with an 
+    to the file name between the basename and the file extension with an
     underscore as delimiter, e.g "index_DE.html".
 
     The type of text or data that is expected in the file is determined
@@ -526,7 +544,7 @@ def load(filepath,
         A dictionary that associates page names to dictionaries that
         that map language keys to the corresponding metadata and data.
         Example:
-        {'greeting' : 
+        {'greeting' :
          {'DE': {'metadata': {...}, 'content': '<p>Guten Morgen!</p>'},
           'EN': ... }
         }
