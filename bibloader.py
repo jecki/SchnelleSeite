@@ -200,7 +200,7 @@ def bib_strings(entry, lang):
                 "{Address} {Year}.".format(**entry)
             bib_short = "{Publisher} {Address} {Year}." \
                 .format(**entry_dict)
-    elif entry["type"] == "InCollection":
+    elif entry["type"] in ["InCollection", "InProceedings"]:
         bib_full = ("{Author}: {Title}, {in} {Editor}"
                     "(" + eds(entry) + "): {Booktitle}, " +
                     "{Publisher} {Address} {Year}.") \

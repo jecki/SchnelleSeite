@@ -24,7 +24,7 @@ from utility import segment_data, matching_segment_range, RX_HTML_COMMENTS, \
 
 RX_PERMALINK_CLASS = re.compile('class *?= *?["\']permalink["\']',
                                 re.IGNORECASE)
-RX_TAG = re.compile("<.*?>")
+RX_TAG = re.compile("<.*?>", re.DOTALL)
 PERMALINK_TEMPLATE = '&nbsp;&nbsp;<a class="permalink" href="#{target}"' \
                      ' title="{tooltip}">{sign}</a>'
 
@@ -75,7 +75,7 @@ def permalinks(html, args, metadata):
     headings = parse_args(args)
     hstr = "".join([str(h) for h in headings])
     rx_htags = re.compile("<h[%s].*?>.*?</h[%s]>" %
-                          (hstr, hstr), re.IGNORECASE)
+                          (hstr, hstr), re.IGNORECASE | re.DOTALL)
 
     def add_permalinks(segment):
         parts = segment_data(segment, rx_htags)
