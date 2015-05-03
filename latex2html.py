@@ -18,11 +18,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 
-Version 0.16 (February, 14th 2015)
+Version 0.2 (May, 1st 2015)
 
 WARNING: This program has hardly been tested and will most probably
 not work as expected!
-TODO: Support for mathematical formulars and MathML
+TODO: Support for mathematical formulae and MathML
 """
 
 
@@ -61,9 +61,12 @@ images = {"next.jpg": b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x
           "upgrey.jpg": b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x00\x00\xff\xfe\x00\x1fCreated by Ecki with The GIMP\xff\xdb\x00C\x00\x05\x03\x04\x04\x04\x03\x05\x04\x04\x04\x05\x05\x05\x06\x07\x0c\x08\x07\x07\x07\x07\x0f\x0b\x0b\t\x0c\x11\x0f\x12\x12\x11\x0f\x11\x11\x13\x16\x1c\x17\x13\x14\x1a\x15\x11\x11\x18!\x18\x1a\x1d\x1d\x1f\x1f\x1f\x13\x17"$"\x1e$\x1c\x1e\x1f\x1e\xff\xdb\x00C\x01\x05\x05\x05\x07\x06\x07\x0e\x08\x08\x0e\x1e\x14\x11\x14\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\xff\xc2\x00\x11\x08\x00\x14\x00\x14\x03\x01"\x00\x02\x11\x01\x03\x11\x01\xff\xc4\x00\x1a\x00\x01\x00\x02\x03\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x06\x02\x05\x07\x08\xff\xc4\x00\x18\x01\x00\x03\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x05\x03\x04\xff\xda\x00\x0c\x03\x01\x00\x02\x10\x03\x10\x00\x00\x01\xeau\x8d\x156\xaf?\xa0\x10%\xef\x1e`H\x13\xff\xc4\x00\x1b\x10\x00\x03\x00\x02\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x03\x04\x00\x05\x01\x06\x11\xff\xda\x00\x08\x01\x01\x00\x01\x05\x02\xa9\xe14\xda\x1d\xb9^y\xddn\xf3\x99\x99N\xb6\xb40\\\x92\x9ar\xa1\xe9S\xd6\x02 \x1f\xff\xc4\x00\x18\x11\x00\x02\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03 !\xff\xda\x00\x08\x01\x03\x01\x01?\x01\x91\xd8\x1c\xa7\xff\xc4\x00\x1d\x11\x01\x00\x01\x03\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x11\x00\x03\x04\x02\x10\x12!1\xff\xda\x00\x08\x01\x02\x01\x01?\x01\xc5\xc6\xb5\xaa\xd3\xcd\xed\xf2\x92\x18j]\xbf\xff\xc4\x00"\x10\x00\x02\x01\x04\x01\x04\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03\x00\x04\x11!1\x10\x12"2AQa\xff\xda\x00\x08\x01\x01\x00\x06?\x02\x92y=Pd\xd1IUU\xb9\\t\x8a\xc1O>o\xfb\xf4*\'\xb8\x82K~\xed\xa1q\xa3I*\xf0\xc34.\x1a\x18\xcc\xaa0\x1c\xae\xc5\x18\xe6\x8ddC\xf0\xc34\x11\x14*\x8d\x00+\xff\xc4\x00!\x10\x01\x00\x02\x00\x04\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x11\x101\xb1\xf0!Qa\x81\x91\xc1\xd1\xff\xda\x00\x08\x01\x01\x00\x01?!h\xe9\xff\x00(\x82\x95\x86\x8f\x1e\xf0\x0e"T\x0c\xf64\x97Q%\x13g)\x96_=\xe5JX\x84\xba3;\xbe\x1cCP4\x14\x04\xff\xda\x00\x0c\x03\x01\x00\x02\x00\x03\x00\x00\x00\x10X\x1f~\xff\xc4\x00\x19\x11\x01\x00\x02\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x11\x10!1\xff\xda\x00\x08\x01\x03\x01\x01?\x10\x02\x9d\x1d\x82%\x92\x8c\x7f\xff\xc4\x00\x1b\x11\x01\x00\x01\x05\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x11!1Aq\xb1\xff\xda\x00\x08\x01\x02\x01\x01?\x10\x06#{I\x8eW\xc8\xcc\x17&\x0b\xc5V\xac\xff\xc4\x00\x1c\x10\x01\x01\x00\x03\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x11\x00!1aA\x10\x91\xff\xda\x00\x08\x01\x01\x00\x01?\x10\xec\x86F\xd8hz\xb0=p\x06H\x14\x93k\xab]\x11\xd7?\x0e\x9e;XT \xdbQg\x989R\x00\x81\xa5x?\x15\xb8\xb9w#/@X\xfas6\n\x01\x01b\x14\xda\xff\x00s\xa8*\xc2\xfcbK\xee\x0ck\x8c\x08\x80\x07\x0c\xff\xd9'}
 
 CSSStylesheet = '''
-body { max-width: 800px; min-width: 320px; margin-left:auto; margin-right:auto; }
+body { max-width: 980px; min-width: 320px;
+       margin-left:auto; margin-right:auto; }
 
-a,h1,h2,h3,h4,h5,ul,ol,li,div,td,th,address,blockquote,nobr,b,i { font-family:"Liberation Sans", Arial, Helvetica, sans-serif; }
+a,h1,h2,h3,h4,h5,ul,ol,li,div,td,th,address,blockquote,nobr,b,i {
+    font-family:"Liberation Sans", Arial, Helvetica, sans-serif;
+}
 
 p { font-family: "Liberation Serif", "Times New Roman", Times, serif; }
 
@@ -114,9 +117,11 @@ HTMLPageHead = '''
 <meta http-equiv="content-type"        content="text/html; charset=UTF-8" />
 <meta http-equiv="content-script-type" content="text/javascript" />
 <meta http-equiv="content-style-type"  content="text/css" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <link rel="stylesheet" type="text/css" href="$stylesheetname" />
-
+$prevpg
+$nextpg
 </head>
 
 <body style="background-color:white">
@@ -129,13 +134,16 @@ HTMLPageHead = '''
 # <body marginwidth="8" marginheight="8" leftmargin="8" topmargin="8">
 
 HTMLPageTop = '''
-<table width="100%" border="0" frame="void" cellpadding="0" cellspacing="0" summary="page heading">
+<table width="100%" border="0" frame="void" cellpadding="0" cellspacing="0"
+ summary="page heading">
 <tr>
 <td class="title">
-<p align="center" style="font-size:1.4em"><a id="pagetop" name="pagetop"><b>$doctitle</b></a></p>
+<p align="center" style="font-size:1.4em; font-weight:bold;">
+  <a id="pagetop" name="pagetop">$doctitle</a>
+</p>
 </td>
 </tr>
-</table> 
+</table>
 '''
 
 HTMLTitlePageBottom = '''
@@ -160,6 +168,7 @@ SCALEFactors = {}
 class ScannerError(Exception):
 
     def __init__(self, error="Scanner Error"):
+        Exception.__init__(self)
         self.error = error
 
 
@@ -220,7 +229,7 @@ class TexScanner:
                 else:
                     s = s[:i]
                     i = -1
-            s = re.sub("\\\%", "%", s)
+            s = re.sub(r"\\\%", "%", s)
             # if s.find("%") >= 0: print (s)
 
             while (s[-1:] == "\012") or (s[-1:] == "\015"):
@@ -248,8 +257,6 @@ class TexScanner:
                     f = open(backupname, "r")
                     data = f.read()
                     f.close()
-                    # print (bibstyle)
-                    # print (re.findall("\\\\bibstyle\\{"+bibstyle+"\\}", data))
                     data = re.sub("\\\\bibstyle\\{" + bibstyle + "\\}",
                                   "\\\\bibstyle{plain}", data)
                     # print (fname, re.findall("\{plain\}", data))
@@ -277,24 +284,24 @@ class TexScanner:
     def getToken(self):
 
         def stripLine(s):
-            s = re.sub("\\\-", "", s)
-            s = re.sub("\\\_", "_", s)
-            s = re.sub("\\\/", "", s)
-            s = re.sub("\"`", '"', s)
-            s = re.sub("\"'", '"', s)
-            s = re.sub("``", '"', s)
-            s = re.sub("''", '"', s)
-            s = re.sub('""', "", s)
-            s = re.sub("\\\~{ }", "~", s)
-            s = re.sub("---", "-", s)
-            s = re.sub("--", "-", s)
+            s = re.sub(r"\\\-", "", s)
+            s = re.sub(r"\\\_", "_", s)
+            s = re.sub(r"\\\/", "", s)
+            s = re.sub(r"\"`", '"', s)
+            s = re.sub(r"\"'", '"', s)
+            s = re.sub(r"``", '"', s)
+            s = re.sub(r"''", '"', s)
+            s = re.sub(r'""', "", s)
+            s = re.sub(r"\\\~{ }", "~", s)
+            s = re.sub(r"---", "-", s)
+            s = re.sub(r"--", "-", s)
             # Sonderzeichen
-            s = re.sub("\\\\'e", "é", s)
-            s = re.sub("\\\\`e", "è", s)
-            s = re.sub("\\\\'a", "á", s)
-            s = re.sub("\\\\`a", "à", s)
-            s = re.sub("\\\\u{g}", "&#287;", s)
-            s = re.sub("\\\\i ", "&#305;", s)
+            s = re.sub(r"\\\\'e", "é", s)
+            s = re.sub(r"\\\\`e", "è", s)
+            s = re.sub(r"\\\\'a", "á", s)
+            s = re.sub(r"\\\\`a", "à", s)
+            s = re.sub(r"\\\\u{g}", "&#287;", s)
+            s = re.sub(r"\\\\i ", "&#305;", s)
             return s
 
         # if self.eof: return ""
@@ -347,7 +354,6 @@ class TexScanner:
                           (self.line[self.pos] != "]"):
                         self.pos = self.pos + 1
                     self.pos = self.pos + 1
-            # while self.line[self.pos:self.pos+1] == " ": self.pos = self.pos+1
             return command
 
         if self.line[self.pos:self.pos + 2] == "{\\":
@@ -370,27 +376,15 @@ HTMLPageType = ["TitlePage", "TableOfContents", "NormalPage"]
 
 class HTMLPage:
     # links to related Pages
-    next, prev, up, contents, index, home = None, None, None, None, None, None
 
-    head = []   # lead-in "<html>...", meta-tags etc.
-    top = []   # title at the beginning of each page
-    body = []   # text
-    bottom = []   # between body and footnotes
-    foot = []   # footnotes
-    end = []   # end of page
-    tail = []   # lead-out : "</body></html>"
-    link = []   # link
-    toplink = []   # linkbar at the top of the page
-    toc_dl = []   # depth-list der Inhaltsverzeichniseinträge
-
-    name = ""
-    title = ""
-    type = ""
-
-    chapter = [0, 0, 0, 0, 0, 0]  # which section (subsection...) of the text
-
-    def __init__(self, name, title, type="NormalPage", chapter=[0, 0, 0, 0, 0, 0]):
-        self.next, self.prev, self.up, self.contens, self.index, self.home = None, None, None, None, None, None
+    def __init__(self, name, title, page_type="NormalPage",
+                 chapter=[0, 0, 0, 0, 0, 0]):
+        self.next = None
+        self.prev = None
+        self.up = None
+        self.contents = None
+        self.index = None
+        self.home = None
 
         self.head = []
         self.top = []
@@ -405,7 +399,7 @@ class HTMLPage:
 
         self.name = name
         self.title = title
-        self.type = type
+        self.type = page_type
         self.chapter = [chapter[0], chapter[1], chapter[2],
                         chapter[3], chapter[4], chapter[5]]  # workaround
 
@@ -414,41 +408,66 @@ class HTMLPage:
 
     def createLink(self):
         self.link = [
-            '\12<table width="100%" border="0" frame="void" cellpadding="0" cellspacing="2" summary="navigation bar">\12<tr>\12']
+            '\12<table width="100%" border="0" frame="void" cellpadding="0"'
+            ' cellspacing="2" summary="navigation bar">\12<tr>\12']
         self.link.append(
-            '<td class="bottomlink" align="center" valign="middle" width="100%"><hr noshade="noshade" /></td>\12')
-#        if self.prev != None:
-#            self.link.append('<td align="center" valign="middle"><a class="internal" href="'+self.prev.name+'"><img width="40" height="40" border="0" align="middle" src="prev.jpg" alt="zurück" /></a></td>\12')
-        if self.up != None:
-            self.link.append('<td class="bottomlink" align="center" valign="middle"><a class="internal" href="' + self.name +
-                             '#pagetop' + '"><img width="40" height="40" border="0" align="middle" src="up.jpg" alt="page top" /></a></td>\12')
-        if self.next != None:
-            self.link.append('<td class="bottomlink" align="center" valign="middle"><a class="internal" href="' +
-                             self.next.name + '"><img width="40" height="40" border="0" align="middle" src="next.jpg" alt="next" /></a></td>\12')
+            '<td class="bottomlink" align="center" valign="middle"'
+            ' width="100%"><hr noshade="noshade" /></td>\12')
+        if self.up is not None:
+            self.link.append('<td class="bottomlink" align="center"'
+                             ' valign="middle"><a class="internal" href="' +
+                             self.name + '#pagetop' + '"><img width="40"'
+                             ' height="40" border="0" align="middle"'
+                             ' src="up.jpg" alt="page top" /></a></td>\12')
+        if self.next is not None:
+            self.link.append('<td class="bottomlink" align="center"'
+                             ' valign="middle"><a class="internal" href="' +
+                             self.next.name + '"><img width="40" height="40"'
+                             ' border="0" align="middle" src="next.jpg"'
+                             ' alt="next" /></a></td>\12')
         self.link.append("</tr>\12</table>\12\12")
 
-        self.toplink = [
-            '\12<table width="100%" border="0" frame="void" cellpadding="0" cellspacing="0" summary="navigation bar">\12<tr>\12']
-        if self.prev != None:
-            self.toplink.append('<td class="toplink" align="center" valign="middle"><a class="internal" href="' + self.prev.name +
-                                '"><img width="40" height="40" border="0" align="middle" src="prevgrey.jpg" alt="previous" /></a></td>\12')
-        if self.up != None:
-            self.toplink.append('<td class="toplink" align="center" valign="middle"><a class="internal" href="' +
-                                self.up.name + '"><img width="40" height="40" border="0" align="middle" src="upgrey.jpg" alt="up" /></a></td>\12')
-        if self.next != None:
-            self.toplink.append('<td class="toplink" align="center" valign="middle"><a class="internal" href="' + self.next.name +
-                                '"><img width="40" height="40" border="0" align="middle" src="nextgrey.jpg" alt="next" /></a></td>\12')
+        self.toplink = ['\12<table width="100%" border="0" frame="void"'
+                        ' cellpadding="0" cellspacing="0"'
+                        ' summary="navigation bar">\12<tr>\12']
+        if self.prev is not None:
+            self.toplink.append('<td class="toplink" align="center"'
+                                ' valign="middle"><a class="internal"'
+                                ' href="' + self.prev.name + '">'
+                                '<img width="40" height="40" border="0"'
+                                ' align="middle" src="prevgrey.jpg"'
+                                ' alt="previous" /></a></td>\12')
+        if self.up is not None:
+            self.toplink.append('<td class="toplink" align="center" '
+                                'valign="middle"><a class="internal" href="' +
+                                self.up.name + '"><img width="40" height="40"'
+                                ' border="0" align="middle" src="upgrey.jpg"'
+                                ' alt="up" /></a></td>\12')
+        if self.next is not None:
+            self.toplink.append('<td class="toplink" align="center"'
+                                ' valign="middle"><a class="internal" href="'
+                                + self.next.name + '"><img width="40"'
+                                ' height="40" border="0" align="middle"'
+                                ' src="nextgrey.jpg" alt="next" />'
+                                '</a></td>\12')
         self.toplink.append(
-            '<td class="toplink" align="center" valign="middle" width="100%">' + REFERENCE + '</td>\12')
-        if self.contents != None:
-            self.toplink.append('<td class="toplink" align="center" valign="middle"><a class="internal" href="' +
-                                self.contents.name + '">' + TOC_TITLE + '</a></td>\12')
-        if self.index != None:
+            '<td class="toplink" align="center" valign="middle" width="100%">'
+            + REFERENCE + '</td>\12')
+        if self.contents is not None:
+            self.toplink.append('<td class="toplink" align="center"'
+                                ' valign="middle"><a class="internal" href="'
+                                + self.contents.name + '">' + TOC_TITLE +
+                                '</a></td>\12')
+        if self.index is not None:
             self.toplink.append(
-                '<td class="toplink" align="center" valign="middle"><a class="internal" href="' + self.index.name + '">Index</a></td>\12')
-        if self.home != None:
+                '<td class="toplink" align="center" valign="middle">'
+                '<a class="internal" href="' + self.index.name + '">'
+                'Index</a></td>\12')
+        if self.home is not None:
             self.toplink.append(
-                '<td class="toplink" align="center" valign="middle"><a class="internal" href="' + self.home.name + '">Home</a></td>\12')
+                '<td class="toplink" align="center" valign="middle">'
+                '<a class="internal" href="' + self.home.name +
+                '">Home</a></td>\12')
         self.toplink.append("</tr>\12</table>\12\12")
 
     def activateLinksInStr(self, s):
@@ -472,7 +491,7 @@ class HTMLPage:
             l[i] = self.activateLinksInStr(l[i])
 
     def crossReferences(self, s):
-        global CROSSReferences
+        # global CROSSReferences
         i = 0
         offset = 0
         while i >= 0:
@@ -526,13 +545,13 @@ class HTMLPage:
     def genPDFMessage(self, style="font-weight:normal"):
         bottom = HTMLTitlePageBottom
         if PDFURL != "":
-            bottom = re.sub("\$pdfurl", PDFURL, bottom)
+            bottom = re.sub(r"\$pdfurl", PDFURL, bottom)
             if LANG[0:2] == "de":
                 message = "Ausdruckbare PDF-Version des Dokuments"
             else:
                 message = "Printable PDF version of the document"
-            bottom = re.sub("\$pdfmessage", message, bottom)
-            bottom = re.sub("\$style", style, bottom)
+            bottom = re.sub(r"\$pdfmessage", message, bottom)
+            bottom = re.sub(r"\$style", style, bottom)
         else:
             bottom = ""
         return bottom
@@ -542,13 +561,23 @@ class HTMLPage:
             self.title = PROJECT_TITLE
         if len(self.title) > 64:
             self.title = self.title[0:64]
-        self.head = [re.sub("\$title", self.title, HTMLPageHead)]
+
+        pg_head = re.sub(r"\$title", self.title, HTMLPageHead)
+        prev_pg = ""
+        next_pg = ""
+        if self.prev is not None:
+            prev_pg = '<link rel="prev" href="' + self.prev.name + '">'
+        if self.next is not None:
+            next_pg = '<link rel="prev" href="' + self.next.name + '">'
+        pg_head = re.sub(r"\$prevpg", prev_pg, pg_head)
+        pg_head = re.sub(r"\$nextpg", next_pg, pg_head)
+        self.head = [pg_head]
+
         self.tail = [HTMLPageTail]
 
         if self.type == "TitlePage":
             self.head = [re.sub("follow", "index, follow", self.head[0], 1)]
             self.createLink()
-            # mytoplink = re.sub(TOC_TITLE, "<b>"+TOC_TITLE+"</b>", "".join(self.toplink))
             mytoplink = "".join(self.toplink)
             self.top = [HTMLPageTop] + [mytoplink] + \
                 ['<hr noshade="noshade" />\12']
@@ -560,15 +589,15 @@ class HTMLPage:
         elif self.type == "TableOfContents":
             self.createLink()
             self.top = [HTMLPageTop] + self.toplink + ['<hr noshade="noshade" />\12'] + \
-                       [
-                           '<table width="100%" summary="table of contents">\12<tr>\12<td class="toc">']
+                       ['<table width="100%" summary="table of contents">'
+                        '\12<tr>\12<td class="toc">']
             self.end = ["</td>\12</tr>\12</table>\12"] + self.link
 
             self.top.append("<h1>" + self.title + "</h1>\012\012")
 
             currPage = self.next
             mind = 5
-            while currPage != None:
+            while currPage is not None:
                 for i in range(len(currPage.body)):
                     pos = currPage.body[i].find("<h")
                     if pos >= 0:
@@ -583,10 +612,14 @@ class HTMLPage:
                             tab = tab + "&#160;"
                         if depth == mind:
                             self.body.append(
-                                '<br />\012' + tab + '<a class="internal" href="' + currPage.name + '"><b>' + entry + '</b></a><br />\012')
+                                '<br />\012' + tab + '<a class="internal"'
+                                ' href="' + currPage.name + '"><b>' + entry +
+                                '</b></a><br />\012')
                         else:
                             self.body.append(
-                                tab + '<a class="internal" href="' + currPage.name + '">' + entry + '</a><br />\012')
+                                tab + '<a class="internal" href="' +
+                                currPage.name + '">' + entry +
+                                '</a><br />\012')
 
                 currPage = currPage.next
 
@@ -626,27 +659,31 @@ class HTMLPage:
                     ratsche = self.contents.toc_dl[i]
                 i -= 1
             self.top.append(
-                '<table width="100%" border="0" frame="void" cellpadding="0" cellspacing="0" summary="abbreviated table of contents">\012')
+                '<table width="100%" border="0" frame="void" cellpadding="0"'
+                ' cellspacing="0" summary="abbreviated table of contents">'
+                '\012')
             t1s = '<tr><td class="toc">'
             t1xs = '<tr><td class="tochilit">'
             t2s = "</td></tr>\012"
             for i in range(len(self.contents.body)):
-                str = self.contents.body[i][0:]
+                st = self.contents.body[i][0:]
                 # str = re.sub("\012", "", str)
-                str = re.sub("\n", "", str)
-                str = re.sub("\<br /\>", "", str)
-                str = re.sub("\<b\>", "", str)
-                str = re.sub("\</b\>", "", str)
+                st = re.sub(r"\n", "", st)
+                st = re.sub(r"\<br /\>", "", st)
+                st = re.sub(r"\<b\>", "", st)
+                st = re.sub(r"\</b\>", "", st)
                 if markl[i] == 1:
-                    self.top.append(t1s + str + t2s)
+                    self.top.append(t1s + st + t2s)
                 elif markl[i] == 2:
-                    x1 = str.find("<a")
-                    x2 = str.find("a>") + 2
+                    x1 = st.find("<a")
+                    x2 = st.find("a>") + 2
                     self.top.append(
-                        t1xs + str[:x1] + "<b>" + str[x1:x2] + "</b>" + str[x2:] + t2s)
+                        t1xs + st[:x1] + "<b>" + st[x1:x2] + "</b>" +
+                        str[x2:] + t2s)
             self.top.append('</table>\012\012')
 
-            self.top = [HTMLPageTop] + self.toplink + ['<hr noshade="noshade" />\12'] + \
+            self.top = [HTMLPageTop] + self.toplink + \
+                ['<hr noshade="noshade" />\12'] + \
                 self.top + ['<hr noshade="noshade" />\012']
             self.bottom = self.link
             self.end = self.link
@@ -687,7 +724,8 @@ TermWSequence = TermPSequence + ["", "\\footnote{",  # "\\caption{"
                                  "\\begin{center}", "\\end{center}",
                                  "\\begin{flushleft}", "\\end{flushleft}",
                                  "\\begin{flushright}", "\\end{flushright}",
-                                 "\\begin{thebibliography}", "\\end{thebibliography}",
+                                 "\\begin{thebibliography}",
+                                 "\\end{thebibliography}",
                                  "\\begin{abstract}", "\\end{abstract}",
                                  "\\begin{figure}", "\\end{figure}",
                                  "\\begin{verbatim}", "\\end{verbatim}"]
@@ -696,6 +734,7 @@ TermWSequence = TermPSequence + ["", "\\footnote{",  # "\\caption{"
 class ParserError(Exception):
 
     def __init__(self, error="Parser Error"):
+        Exception.__init__(self)
         self.error = error
 
 HeadT = ["<h1>",  "<h2>",  "<h3>",  "<h4>",  "<h5>",  "<h6>"]
@@ -703,22 +742,9 @@ HeadTE = ["</h1>", "</h2>", "</h3>", "</h4>", "</h5>",  "</h6>"]
 
 
 class TexParser:
-    scanner = None
-    token = ""
-    tableOfContens = []
-    pageList = []
-    currPage = None
-    nodeCount = 0
-    chapter = [0, 0, 0, 0, 0, 0]  # chapter, section...
-    chapterName = ""
-    footnoteNr = 0
 
-    leadIn = 0  # dirty hack
-    depth = 0  # "       Rückgabevariable
-    mindepth = 5
-
-    def __init__(self, scanner):
-        self.scanner = scanner
+    def __init__(self, tex_scanner):
+        self.scanner = tex_scanner
         self.token = ""
         self.tableOfContents = []
         self.pageList = []
@@ -748,18 +774,18 @@ class TexParser:
             os.system('cp "../' + name + '" ./')
 
     def flushPageList(self):
-        global HTMLPageHead, HTMLPageTop, IMAGENames
-        HTMLPageHead = re.sub("\$author", AUTHOR, HTMLPageHead)
-        HTMLPageHead = re.sub("\$description", DESCRIPTION, HTMLPageHead)
-        HTMLPageHead = re.sub("\$keywords", KEYWORDS, HTMLPageHead)
-        HTMLPageHead = re.sub("\$date", DATE, HTMLPageHead)
-        HTMLPageHead = re.sub("\$robots", "follow", HTMLPageHead)
+        global HTMLPageHead, HTMLPageTop
+        HTMLPageHead = re.sub(r"\$author", AUTHOR, HTMLPageHead)
+        HTMLPageHead = re.sub(r"\$description", DESCRIPTION, HTMLPageHead)
+        HTMLPageHead = re.sub(r"\$keywords", KEYWORDS, HTMLPageHead)
+        HTMLPageHead = re.sub(r"\$date", DATE, HTMLPageHead)
+        HTMLPageHead = re.sub(r"\$robots", "follow", HTMLPageHead)
         HTMLPageHead = re.sub(
-            "\$stylesheetname", DESTINATION_NAME + ".css", HTMLPageHead)
-        HTMLPageHead = re.sub("\$lang", LANG, HTMLPageHead)
+            r"\$stylesheetname", DESTINATION_NAME + ".css", HTMLPageHead)
+        HTMLPageHead = re.sub(r"\$lang", LANG, HTMLPageHead)
 
-        HTMLPageTop = re.sub("\$author", AUTHOR, HTMLPageTop)
-        HTMLPageTop = re.sub("\$doctitle", PROJECT_TITLE, HTMLPageTop)
+        HTMLPageTop = re.sub(r"\$author", AUTHOR, HTMLPageTop)
+        HTMLPageTop = re.sub(r"\$doctitle", PROJECT_TITLE, HTMLPageTop)
 
         lastPage = None
         contentPage = self.pageList[1]
@@ -767,7 +793,7 @@ class TexParser:
             1], self.pageList[1], self.pageList[1], self.pageList[1]]
 
         for page in self.pageList:
-            if lastPage != None:
+            if lastPage is not None:
                 lastPage.next = page
             page.contents = contentPage
             page.prev = lastPage
@@ -802,12 +828,10 @@ class TexParser:
                 f = open("index.html", "w")
                 f.write(p)
                 f.close()
-        pageList = []
         for name in IMAGENames:
             self.copyImage(name)
 
     def writeImages(self):
-        global images
         for key, value in images.items():
             print(key)
             f = open(key, "wb")
@@ -870,11 +894,6 @@ class TexParser:
             i += 1
         return "".join(pages), self.readableBibKey("".join(author))
 
-# def getImageName(self, s):
-##        i = s.find("{")+1
-##        k = s.find("}")
-# return s[i:k]
-
     def getImgWidth(self, s):
         i = s.find("[") + 1
         k = s.find("]")
@@ -890,19 +909,20 @@ class TexParser:
         return -1.0
 
     def readStr(self):
-        str = ""
+        st = ""
         self.token = self.getToken()
         while self.token != "}":
-            str += self.token
+            st += self.token
             self.token = self.getToken()
-        return str
+        return st
 
     def sequenceOfWords(self):
-        global PROJECT_TITLE, AUTHOR, REFERENCE, DATE, CROSSReferences, IMAGENames, SCALEFactors
+        global PROJECT_TITLE, AUTHOR, REFERENCE, DATE
         stack = []
         sequence = []
         s = ""
-        while (not (self.token in TermWSequence)) and (not (self.token[1:8] == "bibitem")):
+        while (not (self.token in TermWSequence)) and \
+                (not (self.token[1:8] == "bibitem")):
             if self.token == "\\\\" or self.token == "\\linebreak":
                 s = s + "<br />\12"
             elif self.token[0:2] == "{\\":
@@ -955,11 +975,13 @@ class TexParser:
                             txt = "Figure " + str(self.figureNr) + ". "
                         s = s + '<a name="' + name + '">' + txt + '</a>'
                         CROSSReferences[name] = (
-                            str(self.figureNr), "node" + str(len(self.pageList) - 1) + ".html#" + name)
+                            str(self.figureNr), "node" +
+                            str(len(self.pageList) - 1) + ".html#" + name)
                     else:
                         s = s + '<a name="' + name + '"> </a>'
                         CROSSReferences[name] = (
-                            self.chapterName, "node" + str(len(self.pageList) - 1) + ".html#" + name)
+                            self.chapterName, "node" +
+                            str(len(self.pageList) - 1) + ".html#" + name)
                 elif self.token[1:4] == "ref":
                     name = self.token[5:-1]
                     ref = "TEXREF" + name
@@ -996,7 +1018,8 @@ class TexParser:
                 else:
                     break
             else:
-                if not ((s == "") and (self.leadIn == 0) and (self.token == " ")):
+                if not ((s == "") and (self.leadIn == 0) and
+                        (self.token == " ")):
                     s = s + self.token
 
             self.token = self.getToken()
@@ -1042,10 +1065,14 @@ class TexParser:
                 fnr = 'FN' + str(self.footnoteNr)
                 refnr = 'REF' + str(self.footnoteNr)
                 sequence.append('<a id="' + refnr + '" name="' + refnr +
-                                '" class="internal" href="#' + fnr + '">[' + str(self.footnoteNr) + ']</a> ')
+                                '" class="internal" href="#' + fnr + '">[' +
+                                str(self.footnoteNr) + ']</a> ')
                 self.token = self.getToken()
-                self.currPage.foot = self.currPage.foot + self.sequenceOfParagraphs(
-                    ' class="footnote"', "", '<a id="' + fnr + '" name="' + fnr + '" class="internal" href="#' + refnr + '">[' + str(self.footnoteNr) + ']</a> ')
+                self.currPage.foot = self.currPage.foot + \
+                    self.sequenceOfParagraphs(
+                        ' class="footnote"', "", '<a id="' + fnr + '" name="' +
+                        fnr + '" class="internal" href="#' + refnr + '">[' +
+                        str(self.footnoteNr) + ']</a> ')
                 self.currPage.foot.append("\12</p>\12")
                 self.leadIn = len(sequence[-2]) + len(sequence[-1])
                 self.token = " "
@@ -1060,7 +1087,8 @@ class TexParser:
                 sequence.append("<ol>\12")
                 ptag = 0
             elif self.token == "\\end{enumerate}":
-                while (sequence[-1][1:4] == "</p") or (sequence[-1][0:2] == "<p"):
+                while (sequence[-1][1:4] == "</p") or \
+                        (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 sequence.append("</li>\12</ol>\12")
             elif self.token == "\\begin{itemize}":
@@ -1069,14 +1097,16 @@ class TexParser:
                 sequence.append("<ul>\12")
                 ptag = 0
             elif self.token == "\\end{itemize}":
-                while (sequence[-1][1:4] == "</p") or (sequence[-1][0:2] == "<p"):
+                while (sequence[-1][1:4] == "</p") or \
+                        (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 sequence.append("</li>\12</ul>\12")
             elif self.token == "\\begin{thebibliography}":
                 if sequence[-1][0:2] == "<p":
                     sequence = sequence[:-1]
                 sequence.append(
-                    HeadT[self.mindepth] + BIBLIOGRAPHY_TITLE + HeadTE[self.mindepth] + "\012\012")
+                    HeadT[self.mindepth] + BIBLIOGRAPHY_TITLE +
+                    HeadTE[self.mindepth] + "\012\012")
                 sequence.append("<ol>\12")
                 ptag = 0
             elif self.token == "\\begin{figure}":
@@ -1087,7 +1117,8 @@ class TexParser:
                 self.figureFlag = True
                 self.figureNr += 1
             elif self.token == "\\end{figure}":
-                while (sequence[-1][1:4] == "</p") or (sequence[-1][0:2] == "<p"):
+                while (sequence[-1][1:4] == "</p") or \
+                        (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 pclass = ''
                 sequence.append("\n</p>\n")
@@ -1108,20 +1139,24 @@ class TexParser:
                 else:
                     sequence.append("\n<br /><u><b>Abstract:</b></u><br />\n")
             elif self.token == "\\end{thebibliography}":
-                while (sequence[-1][1:4] == "</p") or (sequence[-1][0:2] == "<p"):
+                while (sequence[-1][1:4] == "</p") or \
+                        (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 sequence.append("</li>\12</ol>\12")
             elif (self.token == "\\item") or (self.token[1:8] == "bibitem"):
-                while (sequence[-1][1:4] == "</p") or (sequence[-1][0:2] == "<p"):
+                while (sequence[-1][1:4] == "</p") or \
+                        (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 if not (sequence[-1] in ["<ol>\12", "<ul>\12"]):
                     sequence.append("<br />&#160;</li>\12\12")
                 sequence.append("<li>")
                 if self.citeFlag and self.token[1:8] == "bibitem":
                     sequence.append(
-                        "<b>(" + self.readableBibKey(self.token[9:-1]) + ")</b> ")
+                        "<b>(" + self.readableBibKey(self.token[9:-1]) +
+                        ")</b> ")
                 ptag = 0
-            elif self.token in ["\\end{center}", "\\end{flushleft}", "\\end{flushright}"]:
+            elif self.token in ["\\end{center}", "\\end{flushleft}",
+                                "\\end{flushright}"]:
                 palign = ''
                 sequence.append("\12</p>\12")
             elif self.token == "":
@@ -1159,7 +1194,8 @@ class TexParser:
         else:
             depth = 0  # just for safety
 
-        if ((depth > 0) or (self.token == "\\chapter{")) and (depth < self.mindepth):
+        if ((depth > 0) or (self.token == "\\chapter{")) and \
+                (depth < self.mindepth):
             self.mindepth = depth
 
         self.chapter[depth] = self.chapter[depth] + 1
@@ -1219,7 +1255,8 @@ class TexParser:
                 self.currPage = HTMLPage(DESTINATION_NAME + ENDING,
                                          PROJECT_TITLE, "TitlePage")
                 self.currPage.body.append('<br /><p align="center"><big>' +
-                                          PROJECT_TITLE + '</big></p><br /><br />')
+                                          PROJECT_TITLE +
+                                          '</big></p><br /><br />')
                 self.currPage.body.append(
                     '\n<p>' + AUTHOR_STR + ": " + AUTHOR + '</p>\n')
                 self.currPage.body.append(
@@ -1233,8 +1270,9 @@ class TexParser:
             elif self.token in SECTIONS:
                 s = self.ParseHeading()
                 self.nodeCount = self.nodeCount + 1
-                self.currPage = HTMLPage("node" + repr(self.nodeCount) + ENDING,
-                                         s, "NormalPage", self.chapter)
+                self.currPage = HTMLPage("node" + repr(self.nodeCount) +
+                                         ENDING, s, "NormalPage",
+                                         self.chapter)
                 while 1:
                     self.currPage.body.append(
                         HeadT[self.depth] + s + HeadTE[self.depth] + "\12\12")
@@ -1259,8 +1297,9 @@ class TexParser:
                 self.nodeCount = self.nodeCount + 1
                 self.chapter = [0, 0, 0, 0, 0, 0]
                 self.chapter[self.mindepth] = 1
-                self.currPage = HTMLPage("node" + repr(self.nodeCount) + ENDING,
-                                         BIBLIOGRAPHY_TITLE, "NormalPage", self.chapter)
+                self.currPage = HTMLPage("node" + repr(self.nodeCount) +
+                                         ENDING, BIBLIOGRAPHY_TITLE,
+                                         "NormalPage", self.chapter)
                 self.mainContent()
                 self.pageList.append(self.currPage)
 
@@ -1287,54 +1326,58 @@ class TexParser:
         self.writeImages()
 
 
-texFileName = ""
-i = 1
-while i < len(sys.argv):
-    if sys.argv[i][0:1] == "-":
-        if sys.argv[i][0:2] == "-t":
-            i += 1
-            PROJECT_TITLE = sys.argv[i]
-        elif sys.argv[i][0:2] == "-a":
-            i += 1
-            AUTHOR = sys.argv[i]
-            if REFERENCE == "reference to author ?":
-                REFERENCE = AUTHOR
-        elif sys.argv[i][0:2] == "-r":
-            i += 1
-            REFERENCE = sys.argv[i]
-        elif sys.argv[i][0:2] == "-p":
-            i += 1
-            PDFURL = sys.argv[i]
-        elif sys.argv[i][0:2] == "-c":
-            i += 1
-            TOC_TITLE = sys.argv[i]
-        elif sys.argv[i][0:2] == "-b":
-            i += 1
-            BIBLIOGRAPHY_TITLE = sys.argv[i]
-        elif sys.argv[i][0:2] == "-d":
-            i += 1
-            DESCRIPTION = sys.argv[i]
-        elif sys.argv[i][0:2] == "-k":
-            i += 1
-            KEYWORDS = sys.argv[i]
-        elif sys.argv[i][0:2] == "-s":
-            i += 1
-            DESTINATION_NAME = sys.argv[i]
-        elif sys.argv[i][0:2] == "-l":
-            i += 1
-            LANG = sys.argv[i]
-        elif sys.argv[i][0:2] == "-x":
-            HTMLPageHead = '<?xml version="1.0" encoding="ISO-8859-1"?>' + \
-                HTMLPageHead
-            ENDING = ".xhtml"
-        elif sys.argv[i][0:2] == "-i":
-            INDEX_FILE = "toc.html"
-    else:
-        texFileName = sys.argv[i]
-    i += 1
+texFileName = sys.argv[-1]
+basename = texFileName[:-4]
+basename = texFileName
+
+PROJEKT_TITLE = basename
+PDF_URL = basename + ".pdf"
+DESTINATION_NAME = basename
+
+n = 1
+while n < len(sys.argv):
+    if sys.argv[n][0:2] == "-t":
+        n += 1
+        PROJECT_TITLE = sys.argv[n]
+    elif sys.argv[n][0:2] == "-a":
+        n += 1
+        AUTHOR = sys.argv[n]
+        if REFERENCE == "reference to author ?":
+            REFERENCE = AUTHOR
+    elif sys.argv[n][0:2] == "-r":
+        n += 1
+        REFERENCE = sys.argv[n]
+    elif sys.argv[n][0:2] == "-p":
+        n += 1
+        PDFURL = sys.argv[n]
+    elif sys.argv[n][0:2] == "-c":
+        n += 1
+        TOC_TITLE = sys.argv[n]
+    elif sys.argv[n][0:2] == "-b":
+        n += 1
+        BIBLIOGRAPHY_TITLE = sys.argv[n]
+    elif sys.argv[n][0:2] == "-d":
+        n += 1
+        DESCRIPTION = sys.argv[n]
+    elif sys.argv[n][0:2] == "-k":
+        n += 1
+        KEYWORDS = sys.argv[n]
+    elif sys.argv[n][0:2] == "-s":
+        n += 1
+        DESTINATION_NAME = sys.argv[n]
+    elif sys.argv[n][0:2] == "-l":
+        n += 1
+        LANG = sys.argv[n]
+    elif sys.argv[n][0:2] == "-x":
+        HTMLPageHead = '<?xml version="1.0" encoding="UTF-8"?>' + \
+            HTMLPageHead
+        ENDING = ".xhtml"
+    elif sys.argv[n][0:2] == "-i":
+        INDEX_FILE = "toc.html"
+    n += 1
 
 # debugging: texFileName = "Kritik.tex"
-if texFileName == "":
+if texFileName[-4:].lower() != ".tex":
     print ('''
     Usage:
       latex2html.py [OPTION] texfile
@@ -1354,11 +1397,6 @@ if texFileName == "":
           -i            : duplicate table of contents as "index.html" file
     ''')
 else:
-    if DESTINATION_NAME == "destination ?":
-        if texFileName[-4:] == ".tex":
-            DESTINATION_NAME = texFileName[:-4]
-        else:
-            DESTINATION_NAME = texFileName + "www"
     if LANG == "de":
         TOC_TITLE = "Inhaltsverzeichnis"
         BIBLIOGRAPHY_TITLE = "Literaturverzeichnis"

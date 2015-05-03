@@ -16,8 +16,41 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import contextlib
+import os
 import re
 import sitetree
+
+
+def deep_update(dest_dict, with_dict):
+    """Updates 'dest_dict' recursively with 'with_dict'."""
+    for k, v in with_dict.items():
+        if k in dest_dict and isinstance(v, dict) and \
+                isinstance(dest_dict[k], dict):
+            deep_update(dest_dict[k], with_dict[k])
+        else:
+            dest_dict[k] = with_dict[k]
+
+
+@contextlib.contextmanager
+def enter_dir(directory):
+    """Context manager for temporarily descending into a specific directory."""
+    cwd = os.getcwd()
+    os.chdir(directory)
+    yield
+    os.chdir(cwd)
+
+
+@contextlib.contextmanager
+def create_and_enter_dir(directory):
+    """Context manager for creating a directory (unless it already exists) and
+    temporarily descending into it."""
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+    cwd = os.getcwd()
+    os.chdir(directory)
+    yield
+    os.chdir(cwd)
 
 
 def raw_translate(expression, lang, folder, generator_resources):

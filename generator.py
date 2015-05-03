@@ -22,7 +22,7 @@ import subprocess
 import loader
 from locale_strings import extract_locale, remove_locale
 import sitetree
-import tools
+import utility
 
 
 ##############################################################################
@@ -355,7 +355,7 @@ def create_site(root, site_path,
                 create_static_entries(root[entry], os.path.join(path, entry))
 
     def create_branch(root, path, lang, writers):
-        with tools.create_and_enter_dir(path):
+        with utility.create_and_enter_dir(path):
             print("Creating directory " + path)
             for entry in root:
                 if entry.startswith("_"):
@@ -375,7 +375,7 @@ def create_site(root, site_path,
                             f.write(content)
                             print("Writing file " + entry + ".html")
 
-    with tools.create_and_enter_dir(site_path):
+    with utility.create_and_enter_dir(site_path):
         create_static_entries(root, "")
         for lang in root.metadata.get('config', {}).get('languages', ['ANY']):
             create_branch(root, lang, lang, writers)
