@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-# -*- encoding: UTF-8 -*-
+# -*- encoding: utf-8 -*-
 
 """latex2html.py - Converts LaTeX documents into HTML documents.
 
@@ -64,21 +64,27 @@ CSSStylesheet = '''
 body { max-width: 980px; min-width: 320px;
        margin-left:auto; margin-right:auto; }
 
-a,h1,h2,h3,h4,h5,ul,ol,li,div,td,th,address,blockquote,nobr,b,i {
+a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr,b,i {
     font-family:"Liberation Sans", Arial, Helvetica, sans-serif;
 }
 
-p { font-family: "Liberation Serif", "Times New Roman", Times, serif; }
+a.bibref { font-family: "Liberation Serif", "Times New Roman", Times, serif;
+ color: darkblue; }
 
-p               { font-size:1.3em; line-height:1.8em; }
+p,ul,ol,li { font-family: "Liberation Serif", "Times New Roman", Times, serif; }
+
+p, li           { font-size:1.3em; line-height:1.8em; }
+li > p          { font-size:1.0em; }
+
+/* ol.bibliography { font-size:0.8em; line-height:0.9em; } */
+
 p.footnote      { font-size:1em; line-height:1.1em; }
 p.figure        { font-size:1.1em; line-height:1.3em; text-align:center; }
 
 div.caption     { font-size:1em; line-height:1.1em; text-align:center; }
 
-li              { font-size:1.2em; line-height:1.8em; }
 
-td		{ font-size:1.1em; }
+td		{ font-size:1.2em; }
 td.title        { background-color:#F4F4F4; }
 td.toplink      { background-color:#F4F4F4; }
 td.bottomlink   { background-color:#FFFFFF; }
@@ -402,6 +408,8 @@ class HTMLPage:
         self.type = page_type
         self.chapter = [chapter[0], chapter[1], chapter[2],
                         chapter[3], chapter[4], chapter[5]]  # workaround
+        self.pageList = []
+        self.bibpageNr = 0
 
         if self.title != "title ?":
             print("parsing: " + self.title)
@@ -540,6 +548,7 @@ class HTMLPage:
         page = re.sub("ó|\xf3", "&oacute;", page)
 
         page = re.sub("§|\xa7", "&sect;", page)
+        page = page.replace("$bibnode", "node" + str(self.bibpageNr) + ".html")        
         return page
 
     def genPDFMessage(self, style="font-weight:normal"):
@@ -720,7 +729,7 @@ TermWSequence = TermPSequence + ["", "\\footnote{",  # "\\caption{"
                                  "\\begin{quotation}", "\\end{quotation}",
                                  "\\begin{enumeration}", "\\end{enumeration}",
                                  "\\begin{itemize}", "\\end{itemize}",
-                                 "\\item",
+                                 "\\item", # , "\\bibitem",
                                  "\\begin{center}", "\\end{center}",
                                  "\\begin{flushleft}", "\\end{flushleft}",
                                  "\\begin{flushright}", "\\end{flushright}",
@@ -748,6 +757,7 @@ class TexParser:
         self.token = ""
         self.tableOfContents = []
         self.pageList = []
+        self.bibpageNr = 0
         self.currPage = None
         self.nodeCount = 0
         self.chapter = [0, 0, 0, 0, 0, 0]
@@ -823,6 +833,8 @@ class TexParser:
         f.close()
 
         for page in self.pageList:
+            page.pageList = self.pageList
+            page.bibpageNr = self.bibpageNr
             p = page.flush()
             if page.name == INDEX_FILE:
                 f = open("index.html", "w")
@@ -874,12 +886,16 @@ class TexParser:
         s = [ch for ch in key]
         s[0] = s[0].upper()
         for i in range(1, len(s)):
-            if s[i - 1] == "-":
-                s[i - 1] = ","
-            if s[i - 1] == " " or s[i - 1] == ",":
+            if s[i - 1] == "-" and "".join(s[i:i+6]).lower() != "et-al:" and \
+               "".join(s[i:i+3]).lower() != "al:":
+                s[i - 1] = "/"
+            if s[i - 1] == " " or s[i - 1] == "," or s[i - 1] == "/":
                 s[i] = s[i].upper()
         return "".join(s)
 
+    def targetFromBibKey(self, key):
+        return key.replace(":", "_").replace("/", "_").strip()
+    
     def splitCitation(self, s):
         pages, author = [], []
         i = s.find("[")
@@ -949,10 +965,16 @@ class TexParser:
                 elif self.token[1:5] == "cite":
                     self.citeFlag = True
                     pages, authors = self.splitCitation(self.token)
+                    links = []
+                    for author in authors.split(","):
+                        links.append('<a class="bibref" href="$bibnode#' +
+                                     self.targetFromBibKey(author) + '">' +
+                                     author + '</a>')
+                    link = ", ".join(links)
                     if pages != "":
-                        s = s + "(" + authors + ", " + pages + ")"
+                        s = s + "(" + link + ", " + pages + ")"
                     else:
-                        s = s + "(" + authors + ")"
+                        s = s + "(" + link + ")"
                 elif self.token[1:16] == "includegraphics":
                     w = self.getImgWidth(self.token)
                     name = self.readStr()
@@ -973,12 +995,12 @@ class TexParser:
                             txt = "Abbildung " + str(self.figureNr) + ". "
                         else:
                             txt = "Figure " + str(self.figureNr) + ". "
-                        s = s + '<a name="' + name + '">' + txt + '</a>'
+                        s = s + '<span id="' + name + '">' + txt + '</a>'
                         CROSSReferences[name] = (
                             str(self.figureNr), "node" +
                             str(len(self.pageList) - 1) + ".html#" + name)
                     else:
-                        s = s + '<a name="' + name + '"> </a>'
+                        s = s + '<span id="' + name + '"> </a>'
                         CROSSReferences[name] = (
                             self.chapterName, "node" +
                             str(len(self.pageList) - 1) + ".html#" + name)
@@ -1032,6 +1054,12 @@ class TexParser:
             sequence.append(s)
         return sequence
 
+    def isP(self, sequence):
+        i = len(sequence)-1
+        while i > 0 and sequence[i][0:2] != "<p" and sequence[i][0:2] != "<li":
+            i -= 1
+        return i > 0 and sequence[i][0:2] == "<p"
+    
     def sequenceOfParagraphs(self, pclass='', palign='', pretext=""):
         sequence = []
         ptag = 1
@@ -1064,13 +1092,13 @@ class TexParser:
                 self.footnoteNr = self.footnoteNr + 1
                 fnr = 'FN' + str(self.footnoteNr)
                 refnr = 'REF' + str(self.footnoteNr)
-                sequence.append('<a id="' + refnr + '" name="' + refnr +
+                sequence.append('<a id="' + refnr + # '" name="' + refnr +
                                 '" class="internal" href="#' + fnr + '">[' +
                                 str(self.footnoteNr) + ']</a> ')
                 self.token = self.getToken()
                 self.currPage.foot = self.currPage.foot + \
                     self.sequenceOfParagraphs(
-                        ' class="footnote"', "", '<a id="' + fnr + '" name="' +
+                        ' class="footnote"', "", '<a id="' + fnr + # '" name="' +
                         fnr + '" class="internal" href="#' + refnr + '">[' +
                         str(self.footnoteNr) + ']</a> ')
                 self.currPage.foot.append("\12</p>\12")
@@ -1090,6 +1118,8 @@ class TexParser:
                 while (sequence[-1][1:4] == "</p") or \
                         (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
+                if self.isP(sequence):
+                    sequence.append("</p>")
                 sequence.append("</li>\12</ol>\12")
             elif self.token == "\\begin{itemize}":
                 if sequence[-1][0:2] == "<p":
@@ -1100,6 +1130,8 @@ class TexParser:
                 while (sequence[-1][1:4] == "</p") or \
                         (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
+                if self.isP(sequence):
+                    sequence.append("</p>")                    
                 sequence.append("</li>\12</ul>\12")
             elif self.token == "\\begin{thebibliography}":
                 if sequence[-1][0:2] == "<p":
@@ -1107,7 +1139,8 @@ class TexParser:
                 sequence.append(
                     HeadT[self.mindepth] + BIBLIOGRAPHY_TITLE +
                     HeadTE[self.mindepth] + "\012\012")
-                sequence.append("<ol>\12")
+                sequence.append('<ol class="bibliography">\12')
+                self.bibpageNr = len(self.pageList)-1
                 ptag = 0
             elif self.token == "\\begin{figure}":
                 if sequence[-1][0:2] == "<p":
@@ -1148,12 +1181,15 @@ class TexParser:
                         (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 if not (sequence[-1] in ["<ol>\12", "<ul>\12"]):
-                    sequence.append("<br />&#160;</li>\12\12")
-                sequence.append("<li>")
+                        sequence.append("<br />&#160;</li>\12\12")
+                        # sequence.append("</li>\12\12")                    
                 if self.citeFlag and self.token[1:8] == "bibitem":
-                    sequence.append(
-                        "<b>(" + self.readableBibKey(self.token[9:-1]) +
-                        ")</b> ")
+                    bibkey = self.readableBibKey(self.token[9:-1])
+                    target = self.targetFromBibKey(bibkey)
+                    sequence.append('<li id="' + target + '">' +
+                        "<b>(" + bibkey + ")</b> ")
+                else:
+                    sequence.append("<li>")                    
                 ptag = 0
             elif self.token in ["\\end{center}", "\\end{flushleft}",
                                 "\\end{flushright}"]:
@@ -1163,7 +1199,14 @@ class TexParser:
                 if sequence[-1][0:2] == "<p":
                     sequence = sequence[:-1]
                 else:
-                    sequence.append("\12</p>\12")
+                    i = len(sequence)-1
+                    while i >= 0 and sequence[i].find("<li") < 0 \
+                          and sequence[i].find("<p") < 0:
+                        i -= 1
+                    if sequence[i].find("<li") < 0:
+                        sequence.append("\12</p>\12")
+                    else:
+                        sequence.append("\12")
 
             if not (self.token in (TermPSequence + ["}"])):
                 self.token = self.getToken()
@@ -1313,7 +1356,8 @@ class TexParser:
                     PROJECT_TITLE += "\n<br />\n" + \
                         "".join(self.sequenceOfWords())
                 elif self.token[1:7] == "author":
-                    AUTHOR = self.readStr()
+                    self.token = self.getToken()
+                    AUTHOR = "".join(self.sequenceOfWords()) # self.readStr()
                     if REFERENCE == "reference to author ?":
                         REFERENCE = AUTHOR
                 elif self.token[1:5] == "date":

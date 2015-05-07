@@ -215,7 +215,7 @@ def bib_strings(entry, lang):
         tmpl = "{Journal} {Year}, {Pages}"
         if "Doi" in entry:
             tmpl += ", DOI: {Doi}"
-        if "Url" in entry and len(entry("Url")) < 80:
+        if "Url" in entry and len(entry["Url"]) < 80:
             tmpl += ", {Url}"
         tmpl += "."
         bib_full = ("{Author}: {Title}, {in} " + tmpl) \
