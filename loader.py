@@ -347,7 +347,6 @@ def _gen_entry(filepath, metadata_headers, data_chunks,
             entry = sitetree.getentry(metadata['local'], path, lang)
             for key, value in entry['metadata'].items():
                 if key not in metadata:
-                    print("----", path, key)
                     metadata[key] = value
         return metadata
 

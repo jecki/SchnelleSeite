@@ -1,29 +1,28 @@
 #! /usr/bin/python3
 # -*- encoding: UTF-8 -*-
 
-"""latex2html.py - Converts LaTeX documents into HTML documents.
+###########################################################################
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+###########################################################################
 
-Copyright 2015  by Eckhart Arnold
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-
-Version 0.16 (February, 14th 2015)
-
-WARNING: This program has hardly been tested and will most probably
-not work as expected!
-TODO: Support for mathematical formulars and MathML
-"""
+#
+# latex2html_old.py
+#
+# This script converts LaTeX documents into HTML documents.
+# Call latex2html_old.py without any paramters to see a list of options
+#
+# Version: 0.15  (23.8.2008)
+#
+# WARNING: This program has hardly been tested and will most probably
+# not work as expected!
+#
+# TODO: Support for mathematical formulars and MathML
+#
 
 
 import os
@@ -31,6 +30,8 @@ import re
 import string
 import sys
 import time
+
+
 # Globals and predefined constants
 PROJECT_TITLE = "title ?"
 TOC_TITLE = "Table of Contents"
@@ -61,21 +62,17 @@ images = {"next.jpg": b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x
           "upgrey.jpg": b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x00\x00\xff\xfe\x00\x1fCreated by Ecki with The GIMP\xff\xdb\x00C\x00\x05\x03\x04\x04\x04\x03\x05\x04\x04\x04\x05\x05\x05\x06\x07\x0c\x08\x07\x07\x07\x07\x0f\x0b\x0b\t\x0c\x11\x0f\x12\x12\x11\x0f\x11\x11\x13\x16\x1c\x17\x13\x14\x1a\x15\x11\x11\x18!\x18\x1a\x1d\x1d\x1f\x1f\x1f\x13\x17"$"\x1e$\x1c\x1e\x1f\x1e\xff\xdb\x00C\x01\x05\x05\x05\x07\x06\x07\x0e\x08\x08\x0e\x1e\x14\x11\x14\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\xff\xc2\x00\x11\x08\x00\x14\x00\x14\x03\x01"\x00\x02\x11\x01\x03\x11\x01\xff\xc4\x00\x1a\x00\x01\x00\x02\x03\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x06\x02\x05\x07\x08\xff\xc4\x00\x18\x01\x00\x03\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x05\x03\x04\xff\xda\x00\x0c\x03\x01\x00\x02\x10\x03\x10\x00\x00\x01\xeau\x8d\x156\xaf?\xa0\x10%\xef\x1e`H\x13\xff\xc4\x00\x1b\x10\x00\x03\x00\x02\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x03\x04\x00\x05\x01\x06\x11\xff\xda\x00\x08\x01\x01\x00\x01\x05\x02\xa9\xe14\xda\x1d\xb9^y\xddn\xf3\x99\x99N\xb6\xb40\\\x92\x9ar\xa1\xe9S\xd6\x02 \x1f\xff\xc4\x00\x18\x11\x00\x02\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03 !\xff\xda\x00\x08\x01\x03\x01\x01?\x01\x91\xd8\x1c\xa7\xff\xc4\x00\x1d\x11\x01\x00\x01\x03\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x11\x00\x03\x04\x02\x10\x12!1\xff\xda\x00\x08\x01\x02\x01\x01?\x01\xc5\xc6\xb5\xaa\xd3\xcd\xed\xf2\x92\x18j]\xbf\xff\xc4\x00"\x10\x00\x02\x01\x04\x01\x04\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03\x00\x04\x11!1\x10\x12"2AQa\xff\xda\x00\x08\x01\x01\x00\x06?\x02\x92y=Pd\xd1IUU\xb9\\t\x8a\xc1O>o\xfb\xf4*\'\xb8\x82K~\xed\xa1q\xa3I*\xf0\xc34.\x1a\x18\xcc\xaa0\x1c\xae\xc5\x18\xe6\x8ddC\xf0\xc34\x11\x14*\x8d\x00+\xff\xc4\x00!\x10\x01\x00\x02\x00\x04\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x11\x101\xb1\xf0!Qa\x81\x91\xc1\xd1\xff\xda\x00\x08\x01\x01\x00\x01?!h\xe9\xff\x00(\x82\x95\x86\x8f\x1e\xf0\x0e"T\x0c\xf64\x97Q%\x13g)\x96_=\xe5JX\x84\xba3;\xbe\x1cCP4\x14\x04\xff\xda\x00\x0c\x03\x01\x00\x02\x00\x03\x00\x00\x00\x10X\x1f~\xff\xc4\x00\x19\x11\x01\x00\x02\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x11\x10!1\xff\xda\x00\x08\x01\x03\x01\x01?\x10\x02\x9d\x1d\x82%\x92\x8c\x7f\xff\xc4\x00\x1b\x11\x01\x00\x01\x05\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x11!1Aq\xb1\xff\xda\x00\x08\x01\x02\x01\x01?\x10\x06#{I\x8eW\xc8\xcc\x17&\x0b\xc5V\xac\xff\xc4\x00\x1c\x10\x01\x01\x00\x03\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x11\x00!1aA\x10\x91\xff\xda\x00\x08\x01\x01\x00\x01?\x10\xec\x86F\xd8hz\xb0=p\x06H\x14\x93k\xab]\x11\xd7?\x0e\x9e;XT \xdbQg\x989R\x00\x81\xa5x?\x15\xb8\xb9w#/@X\xfas6\n\x01\x01b\x14\xda\xff\x00s\xa8*\xc2\xfcbK\xee\x0ck\x8c\x08\x80\x07\x0c\xff\xd9'}
 
 CSSStylesheet = '''
-body { max-width: 980px; min-width: 320px; margin-left:auto; margin-right:auto; }
+a,p,h1,h2,h3,h4,h5,ul,ol,li,div,td,th,address,blockquote,nobr,b,i { font-family:Verdana,sans-serif; }
 
-a,h1,h2,h3,h4,h5,ul,ol,li,div,td,th,address,blockquote,nobr,b,i { font-family:"Liberation Sans", Arial, Helvetica, sans-serif; }
+p               { font-size:12px; line-height:20px; }
+p.footnote      { font-size:10px; line-height:14px; }
+p.figure        { font-size:12px; line-height:16px; text-align:center; }
 
-p { font-family: "Liberation Serif", "Times New Roman", Times, serif; }
+div.caption     { font-size:10px; line-height:14px; text-align:center; }
 
-p               { font-size:1.3em; line-height:1.8em; }
-p.footnote      { font-size:1em; line-height:1.1em; }
-p.figure        { font-size:1.1em; line-height:1.3em; text-align:center; }
+li              { font-size:12px; line-height:20px; }
 
-div.caption     { font-size:1em; line-height:1.1em; text-align:center; }
-
-li              { font-size:1.2em; line-height:1.8em; }
-
-td		{ font-size:1.1em; }
+td		{ font-size:12px; }
 td.title        { background-color:#F4F4F4; }
 td.toplink      { background-color:#F4F4F4; }
 td.bottomlink   { background-color:#FFFFFF; }
@@ -87,21 +84,20 @@ a.internal:visited      { color:blue; text-decoration:none; }
 a.internal:hover        { color:red;  text-decoration:underline; }
 a.internal:active       { color:blue; text-decoration:none; }
 
-h1 { font-size:1.6em; }
-h2 { font-size:1.5em; }
-h3 { font-size:1.4em; }
-h4 { font-size:1.3em; font-weight:bold; }
-h5 { font-size:1.2em; font-weight:bold; }
+h1 { font-size:18px; }
+h2 { font-size:16px; }
+h3 { font-size:14px; }
+h4 { font-size:12px; font-weight:bold; }
+h5 { font-size:12px; font-weight:bold; }
 
 '''
 
 HTMLPageHead = '''
-<!DOCTYPE HTML>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
-<html lang="$lang">
+<html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
-<meta charset="utf-8" />
 
 <title>$title</title>
 
@@ -132,7 +128,7 @@ HTMLPageTop = '''
 <table width="100%" border="0" frame="void" cellpadding="0" cellspacing="0" summary="page heading">
 <tr>
 <td class="title">
-<p align="center" style="font-size:1.4em"><a id="pagetop" name="pagetop"><b>$doctitle</b></a></p>
+<p align="center" style="font-size:16px"><a id="pagetop" name="pagetop"><b>$doctitle</b></a></p>
 </td>
 </tr>
 </table> 
@@ -242,7 +238,7 @@ class TexScanner:
                 bibstyle = s[i:k]
                 if bibstyle != "plain":
                     fname = texFileName[:-4] + ".aux"
-                    backupname = fname + ".latex2html.tmp"
+                    backupname = fname + ".latex2html_old.tmp"
 
                     os.rename(fname, backupname)
                     f = open(backupname, "r")
@@ -418,26 +414,26 @@ class HTMLPage:
         self.link.append(
             '<td class="bottomlink" align="center" valign="middle" width="100%"><hr noshade="noshade" /></td>\12')
 #        if self.prev != None:
-#            self.link.append('<td align="center" valign="middle"><a class="internal" href="'+self.prev.name+'"><img width="40" height="40" border="0" align="middle" src="prev.jpg" alt="zurück" /></a></td>\12')
+#            self.link.append('<td align="center" valign="middle"><a class="internal" href="'+self.prev.name+'"><img width="20" height="20" border="0" align="middle" src="prev.jpg" alt="zurück" /></a></td>\12')
         if self.up != None:
             self.link.append('<td class="bottomlink" align="center" valign="middle"><a class="internal" href="' + self.name +
-                             '#pagetop' + '"><img width="40" height="40" border="0" align="middle" src="up.jpg" alt="page top" /></a></td>\12')
+                             '#pagetop' + '"><img width="20" height="20" border="0" align="middle" src="up.jpg" alt="page top" /></a></td>\12')
         if self.next != None:
             self.link.append('<td class="bottomlink" align="center" valign="middle"><a class="internal" href="' +
-                             self.next.name + '"><img width="40" height="40" border="0" align="middle" src="next.jpg" alt="next" /></a></td>\12')
+                             self.next.name + '"><img width="20" height="20" border="0" align="middle" src="next.jpg" alt="next" /></a></td>\12')
         self.link.append("</tr>\12</table>\12\12")
 
         self.toplink = [
             '\12<table width="100%" border="0" frame="void" cellpadding="0" cellspacing="0" summary="navigation bar">\12<tr>\12']
         if self.prev != None:
             self.toplink.append('<td class="toplink" align="center" valign="middle"><a class="internal" href="' + self.prev.name +
-                                '"><img width="40" height="40" border="0" align="middle" src="prevgrey.jpg" alt="previous" /></a></td>\12')
+                                '"><img width="20" height="20" border="0" align="middle" src="prevgrey.jpg" alt="previous" /></a></td>\12')
         if self.up != None:
             self.toplink.append('<td class="toplink" align="center" valign="middle"><a class="internal" href="' +
-                                self.up.name + '"><img width="40" height="40" border="0" align="middle" src="upgrey.jpg" alt="up" /></a></td>\12')
+                                self.up.name + '"><img width="20" height="20" border="0" align="middle" src="upgrey.jpg" alt="up" /></a></td>\12')
         if self.next != None:
             self.toplink.append('<td class="toplink" align="center" valign="middle"><a class="internal" href="' + self.next.name +
-                                '"><img width="40" height="40" border="0" align="middle" src="nextgrey.jpg" alt="next" /></a></td>\12')
+                                '"><img width="20" height="20" border="0" align="middle" src="nextgrey.jpg" alt="next" /></a></td>\12')
         self.toplink.append(
             '<td class="toplink" align="center" valign="middle" width="100%">' + REFERENCE + '</td>\12')
         if self.contents != None:
@@ -693,7 +689,7 @@ TermWSequence = TermPSequence + ["", "\\footnote{",  # "\\caption{"
                                  "\\begin{verbatim}", "\\end{verbatim}"]
 
 
-class ParserError(Exception):
+class ParserError:
 
     def __init__(self, error="Parser Error"):
         self.error = error
@@ -1324,7 +1320,7 @@ while i < len(sys.argv):
             i += 1
             LANG = sys.argv[i]
         elif sys.argv[i][0:2] == "-x":
-            HTMLPageHead = '<?xml version="1.0" encoding="UTF-8"?>' + \
+            HTMLPageHead = '<?xml version="1.0" encoding="ISO-8859-1"?>' + \
                 HTMLPageHead
             ENDING = ".xhtml"
         elif sys.argv[i][0:2] == "-i":
@@ -1337,7 +1333,7 @@ while i < len(sys.argv):
 if texFileName == "":
     print ('''
     Usage:
-      latex2html.py [OPTION] texfile
+      latex2html_old.py [OPTION] texfile
 
       Options:
           -t name       : project title

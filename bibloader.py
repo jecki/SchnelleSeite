@@ -20,13 +20,14 @@ __update__ = "2014-12-06"
 
 
 import re
+from utility import deep_update
 
 
 def strip_texcmds(tex):
     """Removes all tex or latex commands from a text-string.
     QUICK HACK: DO NOT RELY ON THIS! (MIGHT DELETE TOO MUCH in SOME CASES)
     """
-    return re.sub("\\\\\S+\s|\\\\\S", "", tex.replace("\\&", "&"))
+    return re.sub(r"\\\\\S+\s|\\\\\S", "", tex.replace("\\&", "&"))
 
 
 class ParserError(Exception):
@@ -161,8 +162,8 @@ trans_table["DE"] = {
 
 
 def bib_strings(entry, lang):
-    """Returns a short and a long string for representing the dictionary
-    'entry'.
+    """Returns a dictionary with different (short and long) string
+    representations of the entry.
     """
     def eds(entry):
         """Return "{Eds.}" or "{Ed.}" depending on the whether there are several
@@ -200,6 +201,7 @@ def bib_strings(entry, lang):
                 "{Address} {Year}.".format(**entry)
             bib_short = "{Publisher} {Address} {Year}." \
                 .format(**entry_dict)
+
     elif entry["type"] in ["InCollection", "InProceedings"]:
         bib_full = ("{Author}: {Title}, {in} {Editor}"
                     "(" + eds(entry) + "): {Booktitle}, " +
@@ -208,26 +210,31 @@ def bib_strings(entry, lang):
         bib_short = ("{Editor} (" + eds(entry) +
                      "): {Booktitle}, {Publisher} " +
                      "{Address} {Year}.").format(**entry_dict)
+
     elif entry["type"] == "Article":
-        tmpl = "{Journal} {Year}, {Pages}."
+        tmpl = "{Journal} {Year}, {Pages}"
         if "Doi" in entry:
             tmpl += ", DOI: {Doi}"
         if "Url" in entry and len(entry("Url")) < 80:
             tmpl += ", {Url}"
+        tmpl += "."
         bib_full = ("{Author}: {Title}, {in} " + tmpl) \
             .format(**entry_dict)
         bib_short = tmpl.format(**entry_dict)
+
     elif entry["type"] == "Proceedings":
         bib_full = ("{Editor} (" + eds(entry) + "): {Title}, {Publisher} " +
                     "{Address} {Year}.").format(**entry_dict)
         bib_short = "{Publisher} {Address} {Year}." \
             .format(**entry_dict)
+
     else:  # fallback option
         bib_full = "{Author}: {Title}, {Publisher} " \
             "{Address} {Year}.".format(**entry_dict)
         bib_short = "{Publisher} {Address} {Year}." \
             .format(**entry_dict)
-    return (bib_short, bib_full)
+
+    return {"bib_short": {lang: bib_short}, "bib_full": {lang: bib_full}}
 
 
 def add_bib_strings(bib, bibentry_to_strs):
@@ -248,12 +255,8 @@ def add_bib_strings(bib, bibentry_to_strs):
             contains a short and long string representation of that entry.
     """
     for entry in bib.values():
-        bib_short = {}
-        bib_full = {}
         for lang in trans_table.keys():
-            bib_short[lang], bib_full[lang] = bibentry_to_strs(entry, lang)
-        entry["bib_short"] = bib_short
-        entry["bib_full"] = bib_full
+            deep_update(entry, bibentry_to_strs(entry, lang))
 
 
 json_ld_book = """
@@ -286,9 +289,9 @@ def bibtex_loader(data, metadata, bibentry_to_strs=bib_strings):
 
 if __name__ == "__main__":
     with open("bibdata.bib", "r") as in_file:
-        data = in_file.read()
-    bib = bibtex_loader(data, {})
-    add_bib_strings(bib, bib_strings)
-    for entry in bib.values():
-        print(entry["bib_full"])
-        print(entry["bib_short"])
+        bibdata = in_file.read()
+    bibliography = bibtex_loader(bibdata, {})
+    add_bib_strings(bibliography, bib_strings)
+    for item in bibliography.values():
+        print(item["bib_full"])
+        print(item["bib_short"])
