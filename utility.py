@@ -91,7 +91,7 @@ def collect_fragments(folder, foldername, order):
     return [foldername + "/" + entry for entry in fragments]
 
 
-RX_HTML_COMMENTS = re.compile("<!--.*?-->")
+RX_HTML_COMMENTS = re.compile("<!--.*?-->", re.DOTALL)
 RX_ATTRIBUTES = re.compile(' ([a-zA-Z]+?) *?= *?["\'](.*?)["\']')
 
 
