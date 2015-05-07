@@ -679,7 +679,7 @@ class HTMLPage:
                     x2 = st.find("a>") + 2
                     self.top.append(
                         t1xs + st[:x1] + "<b>" + st[x1:x2] + "</b>" +
-                        str[x2:] + t2s)
+                        st[x2:] + t2s)
             self.top.append('</table>\012\012')
 
             self.top = [HTMLPageTop] + self.toplink + \
@@ -1328,9 +1328,7 @@ class TexParser:
 
 texFileName = sys.argv[-1]
 basename = texFileName[:-4]
-basename = texFileName
 
-PROJEKT_TITLE = basename
 PDF_URL = basename + ".pdf"
 DESTINATION_NAME = basename
 
