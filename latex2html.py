@@ -1405,7 +1405,3 @@ else:
     scanner = TexScanner(texFileName)
     parser = TexParser(scanner)
     parser.Parse()
-
-
-# while not scanner.eof:
-#    print parser.getToken()
