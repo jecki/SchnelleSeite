@@ -576,10 +576,11 @@ class HTMLPage:
     def flush(self):
         if self.title == "title ?":
             self.title = PROJECT_TITLE
-        if len(self.title) > 64:
-            self.title = self.title[0:64]
+        if len(self.title) > 256:
+            self.title = self.title[0:256]
 
-        pg_head = re.sub(r"\$title", self.title, HTMLPageHead)
+        pg_head = re.sub(r"\$title", re.sub("\\n|(<.*?>)", " ", self.title),
+                         HTMLPageHead)
         prev_pg = ""
         next_pg = ""
         if self.prev is not None:
@@ -801,7 +802,7 @@ class TexParser:
                 exec(f.read(), globals(), globals())
 
         HTMLPageHead = re.sub(r"\$author",
-                              re.sub("\\n|(<.*?>)", "", REFERENCE),
+                              re.sub("\\n|(<.*?>)", " ", REFERENCE),
                               HTMLPageHead)
         HTMLPageHead = re.sub(r"\$description", DESCRIPTION, HTMLPageHead)
         HTMLPageHead = re.sub(r"\$keywords", KEYWORDS, HTMLPageHead)
