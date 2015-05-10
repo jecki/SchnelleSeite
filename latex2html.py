@@ -417,8 +417,8 @@ class HTMLPage:
         self.pageList = []
         self.bibpageNr = 0
 
-        if self.title != "title ?":
-            print("parsing: " + self.title)
+#         if self.title != "title ?":
+#             print("parsing: " + self.title)
 
     def createLink(self):
         self.link = [
@@ -730,7 +730,9 @@ SECTIONS = ["\\chapter{", "\\section{", "\\subsection{", "\\subsubsection{",
 
 TermPSequence = SECTIONS + ["\\begin{document}", "\\end{document}",
                             "\\begin{titlepage}", "\\end{titlepage}",
-                            "\\newpage", "\\maketitle"]
+                            "\\newpage", "\\maketitle",
+                            "\\begin{thebibliography}",
+                            "\\end{thebibliography}"]
 
 TermWSequence = TermPSequence + ["", "\\footnote{",  # "\\caption{"
                                  "\\begin{enumerate}", "\\end{enumerate}",
@@ -1040,7 +1042,13 @@ class TexParser:
                     while self.token != "}":
                         self.token = self.getToken()
                     s = s + "<br />\n"
+                elif self.token[1:9] == "abstract":
+                    if LANG == "de":
+                        s += "\n<br /><b>Zusammenfassung:</b>\n"
+                    else:
+                        s += "\n<br /><b>Abstract:</b>\n"
                 elif self.token[-1] == "{":
+                    # print(">>>>>>>" + self.token)
                     ft = self.interpretFontType(self.token[1:-1])
                     s = s + ft[0]
                     stack.append(ft[1])
@@ -1152,15 +1160,6 @@ class TexParser:
                 if self.isP(sequence):
                     sequence.append("</p>")
                 sequence.append("</li>\12</ul>\12")
-            elif self.token == "\\begin{thebibliography}":
-                if sequence[-1][0:2] == "<p":
-                    sequence = sequence[:-1]
-                sequence.append(
-                    HeadT[self.mindepth] + BIBLIOGRAPHY_TITLE +
-                    HeadTE[self.mindepth] + "\012\012")
-                sequence.append('<ol class="bibliography">\12')
-                self.bibpageNr = len(self.pageList) - 1
-                ptag = 0
             elif self.token == "\\begin{figure}":
                 if sequence[-1][0:2] == "<p":
                     sequence = sequence[:-1]
@@ -1196,10 +1195,11 @@ class TexParser:
                     sequence = sequence[:-1]
                 sequence.append("</li>\12</ol>\12")
             elif (self.token == "\\item") or (self.token[1:8] == "bibitem"):
-                while (sequence[-1][1:4] == "</p") or \
-                        (sequence[-1][0:2] == "<p"):
+                while len(sequence) > 0 and (sequence[-1][1:4] == "</p" or
+                                             sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
-                if not (sequence[-1] in ["<ol>\12", "<ul>\12"]):
+                if len(sequence) == 0 or \
+                        not (sequence[-1] in ["<ol>\12", "<ul>\12"]):
                     sequence.append("<br />&#160;</li>\12\12")
                     # sequence.append("</li>\12\12")
                 if self.citeFlag and self.token[1:8] == "bibitem":
@@ -1362,6 +1362,14 @@ class TexParser:
                 self.currPage = HTMLPage("node" + repr(self.nodeCount) +
                                          ENDING, BIBLIOGRAPHY_TITLE,
                                          "NormalPage", self.chapter)
+                self.token = self.getToken()
+
+                self.currPage.body.append(
+                    HeadT[self.mindepth] + BIBLIOGRAPHY_TITLE +
+                    HeadTE[self.mindepth] + "\012\012")
+                self.currPage.body.append('<ol class="bibliography">\12')
+                self.bibpageNr = len(self.pageList) - 1
+
                 self.mainContent()
                 self.pageList.append(self.currPage)
 
