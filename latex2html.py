@@ -61,20 +61,20 @@ images = {"next.jpg": b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x
           "upgrey.jpg": b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x00\x00\xff\xfe\x00\x1fCreated by Ecki with The GIMP\xff\xdb\x00C\x00\x05\x03\x04\x04\x04\x03\x05\x04\x04\x04\x05\x05\x05\x06\x07\x0c\x08\x07\x07\x07\x07\x0f\x0b\x0b\t\x0c\x11\x0f\x12\x12\x11\x0f\x11\x11\x13\x16\x1c\x17\x13\x14\x1a\x15\x11\x11\x18!\x18\x1a\x1d\x1d\x1f\x1f\x1f\x13\x17"$"\x1e$\x1c\x1e\x1f\x1e\xff\xdb\x00C\x01\x05\x05\x05\x07\x06\x07\x0e\x08\x08\x0e\x1e\x14\x11\x14\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\xff\xc2\x00\x11\x08\x00\x14\x00\x14\x03\x01"\x00\x02\x11\x01\x03\x11\x01\xff\xc4\x00\x1a\x00\x01\x00\x02\x03\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x06\x02\x05\x07\x08\xff\xc4\x00\x18\x01\x00\x03\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x05\x03\x04\xff\xda\x00\x0c\x03\x01\x00\x02\x10\x03\x10\x00\x00\x01\xeau\x8d\x156\xaf?\xa0\x10%\xef\x1e`H\x13\xff\xc4\x00\x1b\x10\x00\x03\x00\x02\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x03\x04\x00\x05\x01\x06\x11\xff\xda\x00\x08\x01\x01\x00\x01\x05\x02\xa9\xe14\xda\x1d\xb9^y\xddn\xf3\x99\x99N\xb6\xb40\\\x92\x9ar\xa1\xe9S\xd6\x02 \x1f\xff\xc4\x00\x18\x11\x00\x02\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03 !\xff\xda\x00\x08\x01\x03\x01\x01?\x01\x91\xd8\x1c\xa7\xff\xc4\x00\x1d\x11\x01\x00\x01\x03\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x11\x00\x03\x04\x02\x10\x12!1\xff\xda\x00\x08\x01\x02\x01\x01?\x01\xc5\xc6\xb5\xaa\xd3\xcd\xed\xf2\x92\x18j]\xbf\xff\xc4\x00"\x10\x00\x02\x01\x04\x01\x04\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03\x00\x04\x11!1\x10\x12"2AQa\xff\xda\x00\x08\x01\x01\x00\x06?\x02\x92y=Pd\xd1IUU\xb9\\t\x8a\xc1O>o\xfb\xf4*\'\xb8\x82K~\xed\xa1q\xa3I*\xf0\xc34.\x1a\x18\xcc\xaa0\x1c\xae\xc5\x18\xe6\x8ddC\xf0\xc34\x11\x14*\x8d\x00+\xff\xc4\x00!\x10\x01\x00\x02\x00\x04\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x11\x101\xb1\xf0!Qa\x81\x91\xc1\xd1\xff\xda\x00\x08\x01\x01\x00\x01?!h\xe9\xff\x00(\x82\x95\x86\x8f\x1e\xf0\x0e"T\x0c\xf64\x97Q%\x13g)\x96_=\xe5JX\x84\xba3;\xbe\x1cCP4\x14\x04\xff\xda\x00\x0c\x03\x01\x00\x02\x00\x03\x00\x00\x00\x10X\x1f~\xff\xc4\x00\x19\x11\x01\x00\x02\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x11\x10!1\xff\xda\x00\x08\x01\x03\x01\x01?\x10\x02\x9d\x1d\x82%\x92\x8c\x7f\xff\xc4\x00\x1b\x11\x01\x00\x01\x05\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x11!1Aq\xb1\xff\xda\x00\x08\x01\x02\x01\x01?\x10\x06#{I\x8eW\xc8\xcc\x17&\x0b\xc5V\xac\xff\xc4\x00\x1c\x10\x01\x01\x00\x03\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x11\x00!1aA\x10\x91\xff\xda\x00\x08\x01\x01\x00\x01?\x10\xec\x86F\xd8hz\xb0=p\x06H\x14\x93k\xab]\x11\xd7?\x0e\x9e;XT \xdbQg\x989R\x00\x81\xa5x?\x15\xb8\xb9w#/@X\xfas6\n\x01\x01b\x14\xda\xff\x00s\xa8*\xc2\xfcbK\xee\x0ck\x8c\x08\x80\x07\x0c\xff\xd9'}
 
 CSSStylesheet = '''
-body { max-width: 980px; min-width: 320px;
+body { max-width: 760px; min-width: 320px;
        margin-left:auto; margin-right:auto; }
 
 a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr,b,i {
     font-family:"Liberation Sans", Arial, Helvetica, sans-serif;
 }
 
-a.bibref { font-family: serif; color: darkblue; }
+a.bibref { font-family: serif; color: #202070; }
 
 p,ul,ol,li { font-family: serif;
              font-feature-settings: "liga";
              text-rendering: optimizeLegibility;
              letter-spacing: -0.02em;
-             color: #383838; }
+             color: #303030; }
 
 p, li           { font-size:1.4em; line-height:1.6em; }
 li > p          { font-size:1.0em; }
@@ -94,10 +94,15 @@ td.bottomlink   { background-color:#FFFFFF; }
 td.toc          { background-color:#F4F4F4; }
 td.tochilit     { background-color:#E7E6E7; }
 
-a.internal:link         { color:blue; text-decoration:none; }
-a.internal:visited      { color:blue; text-decoration:none; }
-a.internal:hover        { color:red;  text-decoration:underline; }
-a.internal:active       { color:blue; text-decoration:none; }
+a:link         { text-decoration:none; }
+a:visited      { text-decoration:none; }
+a:hover        { color:red; text-decoration:underline; }
+a:active       { text-decoration:none; }
+
+a.internal:link         { color:blue; }
+a.internal:visited      { color:blue; }
+a.internal:hover        { color:red; }
+a.internal:active       { color:blue; }
 
 h1 { font-size:1.6em; }
 h2 { font-size:1.5em; }
@@ -147,9 +152,7 @@ HTMLPageTop = '''
  summary="page heading">
 <tr>
 <td class="title">
-<p align="center" style="font-size:1.4em; font-weight:bold;">
-  <a id="pagetop" name="pagetop">$doctitle</a>
-</p>
+<h1 style="text-align:center;"><span id="pagetop" name="pagetop">$doctitle</span></h1>
 </td>
 </tr>
 </table>
@@ -492,6 +495,8 @@ class HTMLPage:
                 k = i
                 while (k < N) and (not (s[k] in ' "<>()[]{}')):
                     k += 1
+                if s[k - 1] == ".":
+                    k -= 1
                 s2 = s[i:k]
                 s = s[0:i] + '<a href="' + s2 + '">' + s2 + '</a>' + s[k:N]
                 i += len(s2) * 2 + 15
@@ -788,7 +793,16 @@ class TexParser:
 
     def flushPageList(self):
         global HTMLPageHead, HTMLPageTop
-        HTMLPageHead = re.sub(r"\$author", AUTHOR, HTMLPageHead)
+
+        # nochmal lesen, da eingetragene Werte entscheidend
+        if os.path.exists(basename + ".l2h"):
+            with open(basename + ".l2h", "r") as f:
+                print("reading metadata from file: " + basename + ".l2h")
+                exec(f.read(), globals(), globals())
+
+        HTMLPageHead = re.sub(r"\$author",
+                              re.sub("\\n|(<.*?>)", "", REFERENCE),
+                              HTMLPageHead)
         HTMLPageHead = re.sub(r"\$description", DESCRIPTION, HTMLPageHead)
         HTMLPageHead = re.sub(r"\$keywords", KEYWORDS, HTMLPageHead)
         HTMLPageHead = re.sub(r"\$date", DATE, HTMLPageHead)
@@ -1103,7 +1117,7 @@ class TexParser:
                     self.sequenceOfParagraphs(
                         # '" name="' +
                         ' class="footnote"', "", '<a id="' + fnr +
-                        fnr + '" class="internal" href="#' + refnr + '">[' +
+                        '" class="internal" href="#' + refnr + '">[' +
                         str(self.footnoteNr) + ']</a> ')
                 self.currPage.foot.append("\12</p>\12")
                 self.leadIn = len(sequence[-2]) + len(sequence[-1])
@@ -1377,7 +1391,12 @@ class TexParser:
 texFileName = sys.argv[-1]
 basename = texFileName[:-4]
 
-PDF_URL = basename + ".pdf"
+if os.path.exists(basename + ".l2h"):
+    with open(basename + ".l2h", "r") as f:
+        print("reading metadata from file: " + basename + ".l2h")
+        exec(f.read(), globals(), globals())
+
+PDFURL = basename + ".pdf"
 DESTINATION_NAME = basename
 
 n = 1
@@ -1451,3 +1470,21 @@ else:
     scanner = TexScanner(texFileName)
     parser = TexParser(scanner)
     parser.Parse()
+    os.chdir("../")
+    if not os.path.exists(basename + ".l2h"):
+        with open(basename + ".l2h", "w") as f:
+            esc_regex = re.compile("\\n")   # "\\n|(<.*?>)"
+            esc = lambda s: esc_regex.sub(" ", s)
+            f.write('# fill in the right values and run latex2html.py again!')
+            f.write("\n\n")
+            f.write("PROJECT_TITLE = '%s'\n" % esc(PROJECT_TITLE))
+            f.write("TOC_TITLE = '%s'\n" % esc(TOC_TITLE))
+            f.write("BIBLIOGERAPHY_TITLE = '%s'\n" % esc(BIBLIOGRAPHY_TITLE))
+            f.write("AUTHOR = '%s'\n" % esc(AUTHOR))
+            f.write("AUTHOR_STR = '%s'\n" % esc(AUTHOR_STR))
+            f.write("REFERENCE = '%s'\n" % esc(REFERENCE))
+            f.write("PDFURL = '%s'\n" % esc(PDFURL))
+            f.write("DESCRIPTION = '%s'\n" % esc(DESCRIPTION))
+            f.write("KEYWORDS = '%s'\n" % esc(KEYWORDS))
+            f.write("LANG = '%s'\n" % esc(LANG))
+            f.write("DATE_STR = '%s'\n" % esc(DATE_STR))
