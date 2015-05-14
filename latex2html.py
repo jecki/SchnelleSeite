@@ -45,6 +45,12 @@ KEYWORDS = "keywords ?"
 DATE = time.strftime("%Y-%m-%dT%H:%M:%S+01:00", time.localtime(time.time()))
 LANG = "en"
 INDEX_FILE = ""
+METADATA_BLOB = ""
+CITE_STR = "Citing:"
+BIB_STR = "Bibliographical information"
+BIBTEX_STR = "BibTeX record:"
+CITATION_INFO = ""
+BIBTEX_INFO = ""
 
 # Tiefe bis zu der die Kapitelnummerierung angezeigt wird
 CHAPTERNUMBERING_DEPTH = 3
@@ -132,7 +138,7 @@ HTMLPageHead = '''
 <meta http-equiv="content-script-type" content="text/javascript" />
 <meta http-equiv="content-style-type"  content="text/css" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+$metadata
 <link rel="stylesheet" type="text/css" href="$stylesheetname" />
 $prevpg
 $nextpg
@@ -581,6 +587,7 @@ class HTMLPage:
 
         pg_head = re.sub(r"\$title", re.sub("\\n|(<.*?>)", " ", self.title),
                          HTMLPageHead)
+
         prev_pg = ""
         next_pg = ""
         if self.prev is not None:
@@ -594,6 +601,10 @@ class HTMLPage:
         self.tail = [HTMLPageTail]
 
         if self.type == "TitlePage":
+            if METADATA_BLOB:
+                self.head[0] = self.head[0].replace("$metadata", METADATA_BLOB)
+            else:
+                self.head[0] = self.head[0].replace("$metadata", "")
             self.head = [re.sub("follow", "index, follow", self.head[0], 1)]
             self.createLink()
             mytoplink = "".join(self.toplink)
@@ -601,10 +612,26 @@ class HTMLPage:
                 ['<hr noshade="noshade" />\12']
             self.end = self.link
             self.activateLinks(self.body)
-            page = self.head + self.top + self.body + self.end + \
+
+            bib = []
+            if BIBTEX_INFO or CITATION_INFO:
+                bib.append("\n<br /><h3>%s</h3>\n" % BIB_STR)
+                if CITATION_INFO:
+                    bib.append("\n<b>%s</b>\n<br />\n" % CITE_STR)
+                    bib.extend(["<code>", CITATION_INFO, "</code>\n",
+                                "<br />\n<br />\n"])
+                if BIBTEX_INFO:
+                    bib.append("\n<b>%s</b>\n" % BIBTEX_STR)
+                    bib.extend(["<pre>", BIBTEX_INFO, "</pre>\n"])
+
+            page = self.head + self.top + self.body + bib + self.end + \
                 [self.genPDFMessage()] + self.tail
 
         elif self.type == "TableOfContents":
+            if METADATA_BLOB:
+                self.head[0] = self.head[0].replace("$metadata", METADATA_BLOB)
+            else:
+                self.head[0] = self.head[0].replace("$metadata", "")
             self.createLink()
             self.top = [HTMLPageTop] + self.toplink + ['<hr noshade="noshade" />\12'] + \
                        ['<table width="100%" summary="table of contents">'
@@ -645,6 +672,7 @@ class HTMLPage:
                 [self.genPDFMessage(style="font-weight:normal")] + self.tail
 
         elif self.type == "NormalPage":
+            self.head[0] = self.head[0].replace("$metadata", "")
             self.createLink()
 
             markl = []
@@ -1044,9 +1072,9 @@ class TexParser:
                     s = s + "<br />\n"
                 elif self.token[1:9] == "abstract":
                     if LANG == "de":
-                        s += "\n<br /><h3>Zusammenfassung:</h3>\n"
+                        s += "\n<br /><b>Zusammenfassung:</b>\n"
                     else:
-                        s += "\n<br /><h3>Abstract:</h3>\n"
+                        s += "\n<br /><b>Abstract:</b>\n"
                 elif self.token[-1] == "{":
                     # print(">>>>>>>" + self.token)
                     ft = self.interpretFontType(self.token[1:-1])
@@ -1186,9 +1214,9 @@ class TexParser:
             elif self.token == "\\begin{abstract}":
                 if LANG == "de":
                     sequence.append(
-                        "\n<br /><u><b>Zusammenfassung:</b></u><br />\n")
+                        "\n<br /><h3>Zusammenfassung:</h3>\n")
                 else:
-                    sequence.append("\n<br /><u><b>Abstract:</b></u><br />\n")
+                    sequence.append("\n<br /><h3>Abstract:</h3>\n")
             elif self.token == "\\end{thebibliography}":
                 while (sequence[-1][1:4] == "</p") or \
                         (sequence[-1][0:2] == "<p"):
@@ -1476,6 +1504,9 @@ else:
         TOC_TITLE = "Inhaltsverzeichnis"
         BIBLIOGRAPHY_TITLE = "Literaturverzeichnis"
         AUTHOR_STR = "Autor"
+        BIB_STR = "Bibliographische Informationen"
+        CITE_STR = "Zitierweise:"
+        BIBTEX_STR = "BibTeX Datensatz:"
         DATE_STR = "Datum"
     scanner = TexScanner(texFileName)
     parser = TexParser(scanner)
@@ -1498,3 +1529,9 @@ else:
             f.write("KEYWORDS = '%s'\n" % esc(KEYWORDS))
             f.write("LANG = '%s'\n" % esc(LANG))
             f.write("DATE_STR = '%s'\n" % esc(DATE_STR))
+            f.write('BIB_STR = "%s"\n' % esc(BIB_STR))
+            f.write('CITE_STR = "%s"\n' % esc(CITE_STR))
+            f.write('BIBTEX_STR = "%s"\n' % esc(BIBTEX_STR))
+            f.write('CITATION_INFO = """' + CITATION_INFO + '"""\n')
+            f.write('BIBTEX_INFO = """' + BIBTEX_INFO + '"""\n')
+            f.write('METADATA_BLOB = """' + METADATA_BLOB + '"""\n')

@@ -330,4 +330,6 @@ if __name__ == "__main__":
         bibdata = in_file.read()
     bib = bibtex_loader(bibdata, {})
     for key in bib:
-        print(citation_metadata(bib[key], key))
+        # print(citation_metadata(bib[key], key))
+        print(bib[key]["bib_full"]["DE"])
+        print(bib[key]["bib_full"]["EN"])
