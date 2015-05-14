@@ -216,7 +216,7 @@ def bib_strings(entry, lang):
         if "Doi" in entry:
             tmpl += ", DOI: {Doi}"
         if "Url" in entry and len(entry["Url"]) < 80:
-            tmpl += ", {Url}"
+            tmpl += ', URL: <a href="{Url}">{Url}</a>'
         tmpl += "."
         bib_full = ("{Author}: {Title}, {in} " + tmpl) \
             .format(**entry_dict)
@@ -259,22 +259,51 @@ def add_bib_strings(bib, bibentry_to_strs):
             deep_update(entry, bibentry_to_strs(entry, lang))
 
 
-json_ld_book = """
-<script type="application/ld+json">
-{
-  "@context": "http://schema.org",
-  "@type": "Book",
-  "name": "{Title}",
-  "author": "{Author}",
-  "editor": "{Editor}",
-  "publisher": "{Publisher}",
-  "datePublished" : "{Year}",
-  "contentLocation": "{Address}",
-  "url": "{Url}",
-  "about": "{Keywords}"
-}
-</script>
-"""
+def citation_metadata(entry, entryname=""):
+    """Converst a bibtex entry in a very rough way to highwire citation
+    metadata.
+    """
+    replace_list = {"journal": "journal_title", "number": "issue"}
+    blacklist = {"timestamp", "bib_short", "bib_full", "owner",
+                 "__markedentry", "quality"}
+    md = []
+    if entryname:
+        md.append('<meta name="citation_bibtex_entryname" content="%s"/>' %
+                  entryname)
+    for key in entry:
+        key_lower = key.lower()
+        if key_lower == "pages":
+            page_range = entry[key].split("-")
+            if page_range[0].isnumeric():
+                md.append('<meta name="citation_firstpage" content="%s" />' %
+                          page_range[0])
+                md.append('<meta name="citation_lastpage" content="%s" />' %
+                          page_range[-1])
+        elif key_lower in ["author", "editor"]:
+            names = entry[key].split(" and ")
+            for name in names:
+                md.append('<meta name="citation_%s" content="%s" />' %
+                          (key_lower, name))
+        elif key_lower in ["url"]:
+            url = entry[key].replace(r"\-", "").replace(r"\_", "")
+            if url.endswith(".pdf"):
+                key_name = "pdf_url"
+            elif url.endswith(".html"):
+                key_name = "full_html_url"
+                md.append('<meta name="citation_abstract_html_url"' +
+                          ' content="%s" />' % url)
+                md.append('<meta name="citation_public_url" content="%s" />' %
+                          url)
+            else:
+                key_name = "public_url"
+            md.append('<meta name="citation_%s" content="%s" />' %
+                      (key_name, url))
+        elif key_lower not in blacklist:
+            md.append('<meta name="citation_%s" content="%s" />' %
+                      (replace_list.get(key_lower, key_lower), entry[key]))
+    md.append("\n")
+    md_str = "\n".join(md)
+    return md_str
 
 
 def bibtex_loader(data, metadata, bibentry_to_strs=bib_strings):
@@ -287,11 +316,18 @@ def bibtex_loader(data, metadata, bibentry_to_strs=bib_strings):
     return bib
 
 
-if __name__ == "__main__":
-    with open("bibdata.bib", "r") as in_file:
+def print_bibfile(bibfile):
+    """Prints the entries of a bibfile as strings on the console.
+    """
+    with open(bibfile, "r") as in_file:
         bibdata = in_file.read()
     bibliography = bibtex_loader(bibdata, {})
-    add_bib_strings(bibliography, bib_strings)
-    for item in bibliography.values():
-        print(item["bib_full"])
-        print(item["bib_short"])
+    for entry in bibliography.values():
+        print(entry["bib_full"])
+
+if __name__ == "__main__":
+    with open("tmp/_bibdata_ANY.bib", "r") as in_file:
+        bibdata = in_file.read()
+    bib = bibtex_loader(bibdata, {})
+    for key in bib:
+        print(citation_metadata(bib[key], key))

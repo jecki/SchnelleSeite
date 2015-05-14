@@ -1044,9 +1044,9 @@ class TexParser:
                     s = s + "<br />\n"
                 elif self.token[1:9] == "abstract":
                     if LANG == "de":
-                        s += "\n<br /><b>Zusammenfassung:</b>\n"
+                        s += "\n<br /><h3>Zusammenfassung:</h3>\n"
                     else:
-                        s += "\n<br /><b>Abstract:</b>\n"
+                        s += "\n<br /><h3>Abstract:</h3>\n"
                 elif self.token[-1] == "{":
                     # print(">>>>>>>" + self.token)
                     ft = self.interpretFontType(self.token[1:-1])
@@ -1407,6 +1407,7 @@ if os.path.exists(basename + ".l2h"):
 
 PDFURL = basename + ".pdf"
 DESTINATION_NAME = basename
+INDEX_FILE = basename + ".html"
 
 n = 1
 while n < len(sys.argv):
