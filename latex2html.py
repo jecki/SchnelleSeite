@@ -93,7 +93,8 @@ p.figure        { font-size:1.1em; line-height:1.3em; text-align:center; }
 div.caption     { font-size:1em; line-height:1.1em; text-align:center; }
 
 
-td		{ font-size:1.2em; }
+td              { font-size:1.2em; line-height:1.05em; padding-top: 0.15em; padding-bottom: 0.15em; }
+h1              { line-height: 1.2em; }
 td.title        { background-color:#F4F4F4; }
 td.toplink      { background-color:#F4F4F4; }
 td.bottomlink   { background-color:#FFFFFF; }
@@ -191,20 +192,38 @@ class ScannerError(Exception):
 
 
 class TexScanner:
-    files = []
-    fIndex = -1
-    eof = 1
-    line = ""
-    pos = 0
 
     def __init__(self, fname):
+        self.files = []
         self.files.append(open(fname, "r"))
         self.fIndex = 0
         self.eof = 0
+        self.line = ""
+        self.lineNr = 0
+        self.pos = 0
         self.patchBibFile = False
+        self.reDesc = re.compile(r"/Subject *\((?P<description>.*)\)",
+                                 re.IGNORECASE)
+        self.reKW = re.compile(r"/Keywords \((?P<keywords>.*)\)",
+                               re.IGNORECASE)
 
     def getRawLine(self):
-        return self.files[self.fIndex].readline()
+        global DESCRIPTION, KEYWORDS
+
+        line = self.files[self.fIndex].readline()
+        self.lineNr += 1
+
+        # catch \pdfInfo metadata
+        if DESCRIPTION == "description ?":
+            m = self.reDesc.search(line)
+            if m and "description" in m.groupdict():
+                DESCRIPTION = m.group("description")
+        if KEYWORDS == "keywords ?":
+            m = self.reKW.search(line)
+            if m and "keywords" in m.groupdict():
+                KEYWORDS = m.group("keywords")
+
+        return line
 
     def getLine(self):
         if self.eof:
@@ -545,23 +564,23 @@ class HTMLPage:
             l[i] = self.crossReferences(l[i])
 
     def postFix(self, page):
-        page = re.sub("ä|\xe4", "&auml;", page)   # HTML-Umlaute
-        page = re.sub("ö|\xf6", "&ouml;", page)
-        page = re.sub("ü|\xfc", "&uuml;", page)
-        page = re.sub("Ä|\xc4", "&Auml;", page)
-        page = re.sub("Ö|\xd6", "&Ouml;", page)
-        page = re.sub("Ü|\xdc", "&Uuml;", page)
-        page = re.sub("ß|\xdf", "&szlig;", page)
-
-        page = re.sub("é|\xe9", "&eacute;", page)
-        page = re.sub("è|\xe8", "&egrave;", page)
-        page = re.sub("á|\xe1", "&aacute;", page)
-        page = re.sub("à|\xe0", "&agrave;", page)
-        page = re.sub("â|\xe2", "&acirc;", page)
-        page = re.sub("ò|\xf2", "&ograve;", page)
-        page = re.sub("ó|\xf3", "&oacute;", page)
-
-        page = re.sub("§|\xa7", "&sect;", page)
+        # page = re.sub("ä|\xe4", "&auml;", page)   # HTML-Umlaute
+        #         page = re.sub("ö|\xf6", "&ouml;", page)
+        #         page = re.sub("ü|\xfc", "&uuml;", page)
+        #         page = re.sub("Ä|\xc4", "&Auml;", page)
+        #         page = re.sub("Ö|\xd6", "&Ouml;", page)
+        #         page = re.sub("Ü|\xdc", "&Uuml;", page)
+        #         page = re.sub("ß|\xdf", "&szlig;", page)
+        #
+        #         page = re.sub("é|\xe9", "&eacute;", page)
+        #         page = re.sub("è|\xe8", "&egrave;", page)
+        #         page = re.sub("á|\xe1", "&aacute;", page)
+        #         page = re.sub("à|\xe0", "&agrave;", page)
+        #         page = re.sub("â|\xe2", "&acirc;", page)
+        #         page = re.sub("ò|\xf2", "&ograve;", page)
+        #         page = re.sub("ó|\xf3", "&oacute;", page)
+        #
+        #         page = re.sub("§|\xa7", "&sect;", page)
         page = page.replace("$bibnode", "node" + str(self.bibpageNr) + ".html")
         return page
 
@@ -828,7 +847,7 @@ class TexParser:
         # nochmal lesen, da eingetragene Werte entscheidend
         if os.path.exists(basename + ".l2h"):
             with open(basename + ".l2h", "r") as f:
-                print("reading metadata from file: " + basename + ".l2h")
+                print("reading again metadata from file: " + basename + ".l2h")
                 exec(f.read(), globals(), globals())
 
         HTMLPageHead = re.sub(r"\$author",
@@ -1005,7 +1024,9 @@ class TexParser:
                         "".join(self.sequenceOfWords())
                     # TODO: ELIMINATE CR/LF from PROJECT_TITLE string!!!
                 elif self.token[1:7] == "author":
-                    AUTHOR = self.readStr()
+                    name = self.readStr()
+                    if AUTHOR == "author ?":
+                        AUTHOR = name
                     if REFERENCE == "reference to author ?":
                         REFERENCE = AUTHOR
                 elif self.token[1:5] == "date":
@@ -1412,7 +1433,10 @@ class TexParser:
                         "".join(self.sequenceOfWords())
                 elif self.token[1:7] == "author":
                     self.token = self.getToken()
-                    AUTHOR = "".join(self.sequenceOfWords())  # self.readStr()
+                    name = "".join(self.sequenceOfWords())
+                    if AUTHOR == "author ?":
+                        # self.readStr()
+                        AUTHOR = name
                     if REFERENCE == "reference to author ?":
                         REFERENCE = AUTHOR
                 elif self.token[1:5] == "date":

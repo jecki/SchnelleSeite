@@ -185,20 +185,33 @@ class ScannerError(Exception):
 
 
 class TexScanner:
-    files = []
-    fIndex = -1
-    eof = 1
-    line = ""
-    pos = 0
 
     def __init__(self, fname):
         self.files.append(open(fname, "r"))
         self.fIndex = 0
         self.eof = 0
+        self.line = ""
+        self.pos = 0
         self.patchBibFile = False
+        self.reDesc = re.compile(r"/Description \((?P<description>.*?)\(",
+                                 re.IGNORECASE)
+        self.reKW = re.compile(r"/Keywords \((?P<keywords>.*?)\(",
+                               re.IGNORECASE)
 
     def getRawLine(self):
-        return self.files[self.fIndex].readline()
+        line = self.files[self.fIndex].readline()
+
+        # catch \pdfInfo metadata
+        if DESCRIPTION == "description ?":
+            m = re.search(line)
+            if m and "description" in m.groupdict():
+                DESCRIPTION = m.group("description")
+        if KEYWORDS == "keywords ?":
+            m = re.search(line)
+            if m and "keywords" in m.groupdict():
+                DESCRIPTION = m.group("keywords")
+
+        return line
 
     def getLine(self):
         if self.eof:

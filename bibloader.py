@@ -259,16 +259,19 @@ def add_bib_strings(bib, bibentry_to_strs):
             deep_update(entry, bibentry_to_strs(entry, lang))
 
 
+# bibtex entries that should not be exported to metadata
+BLACK_LIST = {"timestamp", "bib_short", "bib_full", "owner",
+              "__markedentry", "quality"}
+
+
 def citation_metadata(entry, entryname=""):
     """Converst a bibtex entry in a very rough way to highwire citation
     metadata.
     """
     replace_list = {"journal": "journal_title", "number": "issue"}
-    blacklist = {"timestamp", "bib_short", "bib_full", "owner",
-                 "__markedentry", "quality"}
     md = []
     if entryname:
-        md.append('<meta name="citation_bibtex_entryname" content="%s"/>' %
+        md.append('<meta name="citation_bibtexkey" content="%s"/>' %
                   entryname)
     for key in entry:
         key_lower = key.lower()
@@ -298,12 +301,50 @@ def citation_metadata(entry, entryname=""):
                 key_name = "public_url"
             md.append('<meta name="citation_%s" content="%s" />' %
                       (key_name, url))
-        elif key_lower not in blacklist:
+        elif key_lower not in BLACK_LIST:
             md.append('<meta name="citation_%s" content="%s" />' %
                       (replace_list.get(key_lower, key_lower), entry[key]))
     md.append("\n")
     md_str = "\n".join(md)
     return md_str
+
+
+def XMP_metadata(entry, entryname=""):
+    """Returns a bibtex entry as XMP metadata.
+    """
+
+    xmp = ['<?xpacket begin="r" id="%s"?>' % (entryname or entry['Title']),
+           '<x:xmpmeta xmlns:x="adobe:ns:meta/">',
+           '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">']
+
+    xmp.append('<rdf:Description xmlns:bibtex="'
+               'http://jabref.sourceforge.net/bibteXMP/"')
+    if entryname:
+        xmp.append('    bibtex:bibtexkey="' + entryname + '"')
+    for key in entry:
+        kl = key.lower()
+        if kl not in BLACK_LIST and kl not in ["author", "editor"]:
+            xmp.append('    bibtex:' + kl + '="' + entry[key] + '"')
+    xmp[-1] += '>'
+
+    for key in entry:
+        kl = key.lower()
+        if kl in ["author", "editor"]:
+            names = entry[key].split(" and ")
+            if len(names) > 1:
+                xmp.append(' ' * 8 + '<bibtex:' + kl + '>')
+                xmp.append(' ' * 12 + '<rdf:Seq>')
+                for name in names:
+                    xmp.append(' ' * 16 + '<rdf:li>' + name + '</rdf:li>')
+                xmp.append(' ' * 12 + '</rdf:Seq>')
+                xmp.append(' ' * 8 + '</bibtex:' + kl + '>')
+            else:
+                xmp.append(' ' * 8 + '<bibtex:' + kl + '>' + entry[key] +
+                           '</bibtex:' + kl + '>')
+    xmp.append('</rdf:Description>')
+
+    xmp.extend(['</rdf:RDF>', '</x:xmpmeta>', '<?xpacket end="r"?>'])
+    return "\n".join(xmp)
 
 
 def bibtex_loader(data, metadata, bibentry_to_strs=bib_strings):
@@ -330,6 +371,7 @@ if __name__ == "__main__":
         bibdata = in_file.read()
     bib = bibtex_loader(bibdata, {})
     for key in bib:
-        # print(citation_metadata(bib[key], key))
-        print(bib[key]["bib_full"]["DE"])
+        print(citation_metadata(bib[key], key))
+        # print(bib[key]["bib_full"]["DE"])
         print(bib[key]["bib_full"]["EN"])
+        print(XMP_metadata(bib[key], key))
