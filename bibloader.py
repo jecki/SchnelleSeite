@@ -318,13 +318,17 @@ def XMP_metadata(entry, entryname=""):
            '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">']
 
     xmp.append('<rdf:Description xmlns:bibtex="'
-               'http://jabref.sourceforge.net/bibteXMP/"')
+               'http://jabref.sourceforge.net/bibteXMP/"')  # + '>')
     if entryname:
-        xmp.append('    bibtex:bibtexkey="' + entryname + '"')
+        xmp.append('    bibtex:bibtexkey="' + entryname + '" ')
+        # xmp.append('    <bibtex:bibtexkey>' + entryname +
+        #            '</bibtex:bibtexkey>')
     for key in entry:
         kl = key.lower()
         if kl not in BLACK_LIST and kl not in ["author", "editor"]:
             xmp.append('    bibtex:' + kl + '="' + entry[key] + '"')
+            # xmp.append('    <bibtex:' + kl + '> ' + entry[key] +
+            #            ' </bibtex:' + kl + '>')
     xmp[-1] += '>'
 
     for key in entry:
@@ -335,12 +339,12 @@ def XMP_metadata(entry, entryname=""):
                 xmp.append(' ' * 8 + '<bibtex:' + kl + '>')
                 xmp.append(' ' * 12 + '<rdf:Seq>')
                 for name in names:
-                    xmp.append(' ' * 16 + '<rdf:li>' + name + '</rdf:li>')
+                    xmp.append(' ' * 16 + '<rdf:li> ' + name + ' </rdf:li>')
                 xmp.append(' ' * 12 + '</rdf:Seq>')
                 xmp.append(' ' * 8 + '</bibtex:' + kl + '>')
             else:
-                xmp.append(' ' * 8 + '<bibtex:' + kl + '>' + entry[key] +
-                           '</bibtex:' + kl + '>')
+                xmp.append(' ' * 8 + '<bibtex:' + kl + '> ' + entry[key] +
+                           ' </bibtex:' + kl + '>')
     xmp.append('</rdf:Description>')
 
     xmp.extend(['</rdf:RDF>', '</x:xmpmeta>', '<?xpacket end="r"?>'])

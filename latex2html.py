@@ -68,7 +68,8 @@ images = {"next.jpg": b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x
 
 CSSStylesheet = '''
 body { max-width: 760px; min-width: 320px;
-       margin-left:auto; margin-right:auto; }
+       margin-left:auto; margin-right:auto;
+       padding-left: 8px; padding-right: 8px; }
 
 a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr,b,i {
     font-family:"Liberation Sans", Arial, Helvetica, sans-serif;
@@ -82,23 +83,24 @@ p,ul,ol,li { font-family: serif;
              letter-spacing: -0.02em;
              color: #303030; }
 
-p, li           { font-size:1.4em; line-height:1.6em; }
+p, li           { font-size:1.35em; line-height:1.5em; }
 li > p          { font-size:1.0em; }
 
 /* ol.bibliography { font-size:0.8em; line-height:0.9em; } */
 
-p.footnote      { font-size:1em; line-height:1.1em; }
+p.footnote      { font-size:1.2em; line-height:1.3em; }
 p.figure        { font-size:1.1em; line-height:1.3em; text-align:center; }
 
 div.caption     { font-size:1em; line-height:1.1em; text-align:center; }
 
 
-td              { font-size:1.2em; line-height:1.05em; padding-top: 0.15em; padding-bottom: 0.15em; }
-h1              { line-height: 1.2em; }
+td              { font-size:1.2em; line-height:1.05em; }
+td.title > h1   { line-height: 1.2em; }
+td.title > h2   { line-height: 1.2em; }
 td.title        { background-color:#F4F4F4; }
 td.toplink      { background-color:#F4F4F4; }
 td.bottomlink   { background-color:#FFFFFF; }
-td.toc          { background-color:#F4F4F4; }
+td.toc          { background-color:#F4F4F4; line-height: 1.4em; }
 td.tochilit     { background-color:#E7E6E7; }
 
 a:link         { text-decoration:none; }
@@ -112,10 +114,11 @@ a.internal:hover        { color:red; }
 a.internal:active       { color:blue; }
 
 h1 { font-size:1.6em; }
-h2 { font-size:1.5em; }
-h3 { font-size:1.4em; }
-h4 { font-size:1.3em; font-weight:bold; }
-h5 { font-size:1.2em; font-weight:bold; }
+h2 { font-size:1.5em; padding-top: 0.5em; }
+h3 { font-size:1.4em; paddint-top: 0.5em; }
+h4 { font-size:1.3em; font-weight:bold; padding-top: 0.4em; }
+h5 { font-size:1.2em; font-weight:bold; padding-top: 0.3em; }
+h6 { font-size:1.1em; font-weight:bold; padding-top: 0.2em; }
 
 '''
 
