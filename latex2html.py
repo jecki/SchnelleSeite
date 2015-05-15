@@ -101,7 +101,7 @@ td.title        { background-color:#F4F4F4; }
 td.toplink      { background-color:#F4F4F4; }
 td.bottomlink   { background-color:#FFFFFF; }
 td.toc          { background-color:#F4F4F4; line-height: 1.4em; }
-td.tochilit     { background-color:#E7E6E7; }
+td.tochilit     { background-color:#E7E6E7; line-height: 1.4em; }
 
 a:link         { text-decoration:none; }
 a:visited      { text-decoration:none; }
@@ -944,9 +944,11 @@ class TexParser:
         elif ltxStr == "small":
             return ["<SMALL>", "</SMALL>"]
         elif ltxStr == "large":
-            return ["<BIG>", "</BIG>"]
+            return ['<span style="font-size:1.2rem;">', "</span>"]
         elif ltxStr == "Large":
-            return ["<BIG>", "</BIG>"]
+            return ['<span style="font-size:1.4rem;">', "</span>"]
+        elif ltxStr == "Huge":
+            return ['<span style="font-size:1.6rem;">', "</span>"]
         elif ltxStr == "high":
             return["<SUP>", "</SUP>"]
         else:
@@ -1528,7 +1530,7 @@ if texFileName[-4:].lower() != ".tex":
     ''')
 else:
     if LANG == "de":
-        TOC_TITLE = "Inhaltsverzeichnis"
+        TOC_TITLE = "Inhalts<wbr />verzeichnis"
         BIBLIOGRAPHY_TITLE = "Literaturverzeichnis"
         AUTHOR_STR = "Autor"
         BIB_STR = "Bibliographische Informationen"
