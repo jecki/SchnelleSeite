@@ -77,10 +77,10 @@ a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr,b,i {
 
 a.bibref { font-family: serif; color: #202070; }
 
-p,ul,ol,li { font-family: serif;
+p,ul,ol,li { font-family: Garamond, Georgia, serif;
              font-feature-settings: "liga";
              text-rendering: optimizeLegibility;
-             letter-spacing: -0.02em;
+             /* letter-spacing: -0.02em; */
              color: #303030; }
 
 p, li           { font-size:1.35em; line-height:1.5em; }
