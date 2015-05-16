@@ -75,15 +75,16 @@ a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr,b,i {
     font-family:"Liberation Sans", Arial, Helvetica, sans-serif;
 }
 
-a.bibref { font-family: serif; color: #202070; }
+p,ul,ol,li, a.internal, a.bibref { 
+    font-family: "Century SchoolBook URW", Garamond, Georgia, Times, serif;
+    font-feature-settings: "liga";
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.01em; }
 
-p,ul,ol,li { font-family: Garamond, Georgia, serif;
-             font-feature-settings: "liga";
-             text-rendering: optimizeLegibility;
-             /* letter-spacing: -0.02em; */
-             color: #303030; }
+p,ul,ol,li, a.internal { color: #303030; }
+a.bibref { color: #202070; }
 
-p, li           { font-size:1.35em; line-height:1.5em; }
+p, li           { font-size:1.35em; line-height:1.5em; hyphens: auto; }
 li > p          { font-size:1.0em; }
 
 /* ol.bibliography { font-size:0.8em; line-height:0.9em; } */
@@ -97,7 +98,7 @@ div.caption     { font-size:1em; line-height:1.1em; text-align:center; }
 td              { font-size:1.2em; line-height:1.05em; }
 td.title > h1   { line-height: 1.2em; }
 td.title > h2   { line-height: 1.2em; }
-td.title        { background-color:#F4F4F4; }
+td.title        { background-color:#F4F4F4; word-wrap: break-word; }
 td.toplink      { background-color:#F4F4F4; }
 td.bottomlink   { background-color:#FFFFFF; }
 td.toc          { background-color:#F4F4F4; line-height: 1.4em; }
@@ -119,11 +120,9 @@ h3 { font-size:1.4em; paddint-top: 0.5em; }
 h4 { font-size:1.3em; font-weight:bold; padding-top: 0.4em; }
 h5 { font-size:1.2em; font-weight:bold; padding-top: 0.3em; }
 h6 { font-size:1.1em; font-weight:bold; padding-top: 0.2em; }
-
 '''
 
-HTMLPageHead = '''
-<!DOCTYPE HTML>
+HTMLPageHead = '''<!DOCTYPE HTML>
 
 <html lang="$lang">
 
@@ -149,7 +148,6 @@ $nextpg
 </head>
 
 <body style="background-color:white">
-
 '''
 
 # <body style="background-color:#FFFFF0"> <!-- beige backgrounde -->
@@ -1040,15 +1038,27 @@ class TexParser:
                     self.citeFlag = True
                     pages, authors = self.splitCitation(self.token)
                     links = []
+                    al = []
                     for author in authors.split(","):
+                        author_y = author.replace(":", " ")
+                        author_a = ""
+                        if len(self.token) >= 6 and self.token[5] == "t":
+                            m = re.search("[0-9]", author)
+                            if m:
+                                y = m.start()
+                                author_y = author[y:]
+                                author_a = author[:y].replace(":", "")
                         links.append('<a class="bibref" href="$bibnode#' +
                                      self.targetFromBibKey(author) + '">' +
-                                     author + '</a>')
+                                     author_y + '</a>')
+                        if author_a:
+                            al.append(author_a)
                     link = ", ".join(links)
+                    authors = ", ".join(al) + " " if al else ""
                     if pages != "":
-                        s = s + "(" + link + ", " + pages + ")"
+                        s = s + authors + " (" + link + ", " + pages + ")"
                     else:
-                        s = s + "(" + link + ")"
+                        s = s + authors + " (" + link + ")"
                 elif self.token[1:16] == "includegraphics":
                     w = self.getImgWidth(self.token)
                     name = self.readStr()
@@ -1172,16 +1182,16 @@ class TexParser:
                 self.footnoteNr = self.footnoteNr + 1
                 fnr = 'FN' + str(self.footnoteNr)
                 refnr = 'REF' + str(self.footnoteNr)
-                sequence.append('<a id="' + refnr +  # '" name="' + refnr +
-                                '" class="internal" href="#' + fnr + '">[' +
-                                str(self.footnoteNr) + ']</a> ')
+                sequence.append('<a id="' + refnr +
+                                '" class="internal fn" href="#' + fnr +
+                                '"><sup>' + str(self.footnoteNr) +
+                                '</sup></a> ')
                 self.token = self.getToken()
                 self.currPage.foot = self.currPage.foot + \
                     self.sequenceOfParagraphs(
-                        # '" name="' +
                         ' class="footnote"', "", '<a id="' + fnr +
-                        '" class="internal" href="#' + refnr + '">[' +
-                        str(self.footnoteNr) + ']</a> ')
+                        '" class="internal fn" href="#' + refnr + '"><sup>' +
+                        str(self.footnoteNr) + '</sup></a> ')
                 self.currPage.foot.append("\12</p>\12")
                 self.leadIn = len(sequence[-2]) + len(sequence[-1])
                 self.token = " "
