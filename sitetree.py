@@ -19,9 +19,9 @@ limitations under the License.
 
 import collections
 import os
-import shutil
 
 import locale_strings
+from utility import copy_on_condition, copytree_on_condition, is_newer
 
 
 class Entry(dict):
@@ -128,59 +128,6 @@ class Entry(dict):
         except KeyError as error:
             raise error
         return self[key]
-
-
-def is_newer(src_file, dst_file):
-    """Returns True, if src_file's date is newer_or equal than dst_file's.
-    Returns False otherwise or if dst_file does not exist. Raises an error if
-    src_file and dst_file have different names or are different kinds of
-    entities, e.g. directory and file.
-    """
-    src_name = os.path.basename(src_file)
-    dst_name = os.path.basename(dst_file)
-    if src_name != dst_name:
-        raise ValueError(("Source file %s does not have the same name " +
-                          "as destination file %s") % (src_file, dst_file))
-    if (os.path.exists(dst_file) and not
-        ((os.path.isfile(src_file) and os.path.isfile(dst_file)) or
-         (os.path.isdir(src_file) and os.path.isdir(dst_file)))):
-        raise ValueError(("Source %s and destination %s are of different " +
-                          "kind.") % (src_file, dst_file))
-    # > instead of >= to avaoid to much copying, could be dangerous in
-    # case of changes that were made within less than a second...
-    return (not os.path.exists(dst_file) or
-            os.path.getmtime(src_file) > os.path.getmtime(dst_file))
-    # or os.path.getsize(src_file) != os.path.getsize(dst_file)
-
-
-def copy_on_condition(src, dst, cond, preprocessors={}):
-    """Copies src to dst, if cond(src, dst) returns True. If a preprocessor
-    is given for the extentions of the file, the preprocessor function is
-    called with the source and destination name instead of the system's
-    copy function.
-    """
-    if cond(src, dst):
-        ext = os.path.splitext(src)[1]
-        if ext in preprocessors:
-            preprocessors[ext](src, dst)
-        else:
-            shutil.copy2(src, dst)
-
-
-def copytree_on_condition(src, dst, cond, preprocessors={}):
-    """Copies all files and directories from src to dst. Files are only copied
-    if cond(src, dst) is True. Copying may be channeled through a preprocessor.
-    """
-    names = os.listdir(src)
-    os.makedirs(dst, exist_ok=True)
-    for name in names:
-        srcname = os.path.join(src, name)
-        dstname = os.path.join(dst, name)
-        if os.path.isdir(srcname):
-            copytree_on_condition(srcname, dstname, cond, preprocessors)
-        else:
-            copy_on_condition(srcname, dstname, cond, preprocessors)
-    shutil.copystat(src, dst)
 
 
 class StaticEntry:
@@ -330,3 +277,48 @@ def cascaded_getitem(key, folder, source, lang):
         else:
             raise KeyError(key)
     return value
+
+
+##############################################################################
+#
+# special functions for translations
+#
+##############################################################################
+
+
+def raw_translate(expression, lang, folder, generator_resources):
+    """Search for a translation of 'expression' into language 'lang'.
+
+    The search starts in 'folder', continues through 'folder's parent folders
+    and ultimately searches site_generator['_data']['_transtable']
+    """
+    try:
+        tr = cascaded_getitem(expression, folder, '_transtable', lang)
+    except KeyError as err:
+        if err.args[0] == expression:
+            tr = generator_resources['_data']['_transtable'].\
+                bestmatch(lang)['content'][expression]
+        else:
+            raise err
+    return tr
+
+
+def translate(expression, metadata):
+    """Search for a translation of 'expression' into the language set in the
+    metadata.
+    """
+    return raw_translate(expression, metadata['language'], metadata['local'],
+                         metadata['config']['generator_resources'])
+
+
+def collect_fragments(folder, foldername, order):
+    """Collects the fragments in 'folder' and returns the pathnames of the
+    fragements (starting from folder) ordered by the value of the order
+    metadata parameter in each fragment.
+    """
+    fragments = [entry for entry in folder if folder[entry].is_fragment()]
+    if order:
+        fragments.sort(
+            key=lambda item: folder[item].bestmatch('ANY')['metadata'][order],
+            reverse=True)
+    return [foldername + "/" + entry for entry in fragments]

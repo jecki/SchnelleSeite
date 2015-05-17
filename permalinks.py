@@ -18,8 +18,9 @@ limitations under the License.
 
 import re
 
+from sitetree import translate
 from utility import segment_data, matching_segment_range, RX_HTML_COMMENTS, \
-    set_attributes, get_attributes, translate
+    set_attributes, get_attributes
 
 
 RX_PERMALINK_CLASS = re.compile('class *?= *?["\']permalink["\']',

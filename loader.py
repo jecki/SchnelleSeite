@@ -33,7 +33,6 @@ from jinja2_loader import jinja2_loader
 import locale_strings
 from permalinks import permalinks
 import sitetree
-from utility import collect_fragments
 
 
 __update__ = "2015-03-07"
@@ -597,7 +596,7 @@ def load(filepath,
         folder = metadata['local'][foldername]
         order = metadata.get('orderby') or \
             metadata['local'][foldername].get('orderby')
-        subpages = collect_fragments(folder, foldername, order)
+        subpages = sitetree.collect_fragments(folder, foldername, order)
         groups = _multicast_groups(subpages, metadata)
         page_names = _multicast_pagenames(basename, groups, metadata)
         metadata['MC_ALL'] = subpages

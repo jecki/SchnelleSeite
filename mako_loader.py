@@ -20,6 +20,8 @@ from mako.template import Template
 from mako.lookup import TemplateLookup
 
 
+# TODO: This is a stub!
+
 def mako_loader(text, metadata):
     """A loader for mako templates.
     """

@@ -22,7 +22,6 @@ import jinja2
 import markdown
 
 import sitetree
-from utility import translate, collect_fragments
 
 
 ##############################################################################
@@ -43,7 +42,7 @@ def jinja2_translate(env, expression):
     This requires that the variables 'local', 'language' and 'root' are
     defined in the jinja2 environment.
     """
-    return translate(expression, env.globals)
+    return sitetree.translate(expression, env.globals)
 
 
 @jinja2.environmentfilter
@@ -101,7 +100,7 @@ def jinja2_fragments(env, directory, orderby=None):
     folder = env.globals['local'][directory]
     order = orderby or env.globals.get('orderby') or \
         env.globals['local'][directory].get('orderby')
-    return collect_fragments(folder, directory, order)
+    return sitetree.collect_fragments(folder, directory, order)
 
 
 @jinja2.environmentfilter
