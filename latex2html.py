@@ -75,11 +75,21 @@ a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr,b,i {
     font-family:"Liberation Sans", Arial, Helvetica, sans-serif;
 }
 
-p,ul,ol,li, a.internal, a.bibref { 
+p,ul,ol,li, a.internal, a.bibref {
     font-family: "Century SchoolBook URW", Garamond, Georgia, Times, serif;
-    font-feature-settings: "liga";
-    text-rendering: optimizeLegibility;
     letter-spacing: -0.01em; }
+
+@media screen and (min-width: 680px) {
+    p,ul,ol,li, a.internal, a.bibref {
+        font-feature-settings: "liga";
+    }
+}
+
+@media screen and (min-width: 1040px) {
+    p,ul,ol,li, a.internal, a.bibref {
+        text-rendering: optimizeLegibility;
+    }
+}
 
 p,ul,ol,li, a.internal { color: #303030; }
 a.bibref { color: #202070; }
@@ -1079,12 +1089,12 @@ class TexParser:
                             txt = "Abbildung " + str(self.figureNr) + ". "
                         else:
                             txt = "Figure " + str(self.figureNr) + ". "
-                        s = s + '<span id="' + name + '">' + txt + '</a>'
+                        s = s + '<span id="' + name + '">' + txt + '</span>'
                         CROSSReferences[name] = (
                             str(self.figureNr), "node" +
                             str(len(self.pageList) - 1) + ".html#" + name)
                     else:
-                        s = s + '<span id="' + name + '"> </a>'
+                        s = s + '<span id="' + name + '"> </span>'
                         CROSSReferences[name] = (
                             self.chapterName, "node" +
                             str(len(self.pageList) - 1) + ".html#" + name)

@@ -66,8 +66,8 @@ def create_and_enter_dir(directory):
 
 
 def is_newer(src_file, dst_file):
-    """Returns True, if src_file's date is newer_or equal than dst_file's.
-    Returns False otherwise or if dst_file does not exist. Raises an error if
+    """Returns True, if src_file's date is newer_or equal than dst_file's or
+    if dst_file does not exist. Returns False otherwise. Raises an error if
     src_file and dst_file have different names or are different kinds of
     entities, e.g. directory and file.
     """
