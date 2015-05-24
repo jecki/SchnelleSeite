@@ -28,9 +28,12 @@ TODO: Support for mathematical formulae and MathML
 
 import os
 import re
+import shutil
 import string
 import sys
 import time
+
+
 # Globals and predefined constants
 PROJECT_TITLE = "title ?"
 TOC_TITLE = "Table of Contents"
@@ -287,9 +290,9 @@ class TexScanner:
             if i >= 0:
                 i = i + 7
                 k = s.find("}", i)
-                fname = s[i:k]
+                auxname = s[i:k]
                 self.fIndex = self.fIndex + 1
-                self.files.append(open(fname, "r"))
+                self.files.append(open(auxname, "r"))
                 continue
 
             i = s.find("\\bibliographystyle{")
@@ -297,31 +300,44 @@ class TexScanner:
                 i += 19
                 k = s.find("}", i)
                 bibstyle = s[i:k]
-                if bibstyle != "plain":
-                    fname = texFileName[:-4] + ".aux"
-                    backupname = fname + ".latex2html.tmp"
-
-                    os.rename(fname, backupname)
-                    f = open(backupname, "r")
-                    data = f.read()
-                    f.close()
+                auxname = texFileName[:-4] + ".aux"
+                bibname = texFileName[:-4] + ".bbl"
+                if bibstyle != "apsr":
+                    os.rename(auxname, auxname + ".latex2html.tmp")
+                    os.rename(bibname, bibname + ".latex2html.tmp")
+                    with open(auxname + ".latex2html.tmp", "r") as f:
+                        data = f.read()
                     data = re.sub("\\\\bibstyle\\{" + bibstyle + "\\}",
-                                  "\\\\bibstyle{plain}", data)
-                    # print (fname, re.findall("\{plain\}", data))
-                    f = open(fname, "w")
-                    f.write(data)
-                    f.close()
+                                  "\\\\bibstyle{apsr}", data)
+                    # print (auxname, re.findall("\{plain\}", data))
+                    with open(auxname, "w") as f:
+                        f.write(data)
 
                     os.system("bibtex " + texFileName[:-4])
-                    os.rename(backupname, fname)
+                    os.rename(auxname + ".latex2html.tmp", auxname)
+                    os.rename(bibname, bibname[:-4] + ".latex2html.bbl")
+                    os.rename(bibname + ".latex2html.tmp", bibname)
 
-                    continue
+                else:
+                    shutil.copy(bibname, bibname[:-4] + ".latex2html.bbl")
+
+                with open(bibname[:-4] + ".latex2html.bbl", "r") as f:
+                    bbl = f.read()
+                with open(bibname[:-4] + ".latex2html.bbl", "w") as f:
+                    i = bbl.find("\n")
+                    k = bbl.find("\\bibitem")
+                    if k < 0:
+                        k = i + 1
+                    f.write(bbl[:i + 1])
+                    f.write(bbl[k:])
+
+                continue
 
             i = s.find("\\bibliography{")
             if i >= 0:
-                fname = texFileName[:-4] + ".bbl"
+                bibname = texFileName[:-4] + ".latex2html.bbl"
                 self.fIndex += 1
-                self.files.append(open(fname, "r"))
+                self.files.append(open(bibname, "r"))
                 self.patchBibFile = True
                 continue
 
@@ -389,6 +405,17 @@ class TexScanner:
                   (self.line[self.pos] in CHARS):
                 command = command + self.line[self.pos]
                 self.pos = self.pos + 1
+
+                if self.line[self.pos - 1] == "[":
+                    while self.pos < len(self.line) and \
+                            self.line[self.pos] != "]":
+                        command = command + self.line[self.pos]
+                        self.pos = self.pos + 1
+                        if self.pos >= len(self.line):
+                            command += " "
+                            self.line = self.getLine()
+                            self.pos = 0
+
             if self.line[self.pos:self.pos + 1] == "{":
                 command = command + self.line[self.pos]
                 self.pos = self.pos + 1
@@ -808,6 +835,10 @@ TermWSequence = TermPSequence + ["", "\\footnote{",  # "\\caption{"
                                  "\\begin{figure}", "\\end{figure}",
                                  "\\begin{verbatim}", "\\end{verbatim}"]
 
+KnownTokens = ["\\begin{", "\\end{", "\\bibitem{", "\\label{",
+               "\\ref{", "\\bibliographystyle{", "\\nocite{",
+               "\\url{", "\\harvardurl{"]
+
 
 class ParserError(Exception):
 
@@ -930,14 +961,17 @@ class TexParser:
 
     def getToken(self):
         token = self.scanner.getToken()
-        if (token == "\\begin{") or (token == "\\end{") or \
-           (token == "\\bibitem{") or (token[0:5] == "\\cite") or \
-           (token == "\\label{") or (token == "\\ref{") or \
-           (token == "\\bibliographystyle{"):
-            s = ""
-            while s != "}":
+        if (token in KnownTokens) or (token[0:5] == "\\cite") or \
+                token[0:8] == "\\bibitem":
+            i = 1
+            while i > 0:
                 s = self.scanner.getToken()
                 token = token + s
+                if s == "}":
+                    i -= 1
+                elif s[0:1] == "{":
+                    i += 1
+
         return token
 
     def interpretFontType(self, ltxStr):
@@ -964,6 +998,11 @@ class TexParser:
 
     def readableBibKey(self, key):
         s = [ch for ch in key]
+        i = 0
+        while i < len(s) and not s[i].isnumeric():
+            i += 1
+        if i < len(s) and s[i - 1] != ":":
+            s.insert(i, ":")
         s[0] = s[0].upper()
         for i in range(1, len(s)):
             if s[i - 1] == "-" and "".join(s[i:i + 6]).lower() != "et-al:" and \
@@ -971,7 +1010,9 @@ class TexParser:
                 s[i - 1] = "/"
             if s[i - 1] == " " or s[i - 1] == "," or s[i - 1] == "/":
                 s[i] = s[i].upper()
-        return "".join(s)
+        if ("".join(s)) == "Arnold2006":
+            print("HERE: " + str(s))
+        return "".join(s).replace("-et-al", " et al.")
 
     def targetFromBibKey(self, key):
         return key.replace(":", "_").replace("/", "_").strip()
@@ -1069,6 +1110,13 @@ class TexParser:
                         s = s + authors + " (" + link + ", " + pages + ")"
                     else:
                         s = s + authors + " (" + link + ")"
+                elif self.token[1:7] == "nocite":
+                    self.citeFlag = True
+                elif self.token[1:4] == "url" or \
+                        self.token[1:11] == "harvardurl":
+                    a = self.token.find("{") + 1
+                    b = len(self.token) - 1
+                    print("URL: ", self.token[a:b])
                 elif self.token[1:16] == "includegraphics":
                     w = self.getImgWidth(self.token)
                     name = self.readStr()
@@ -1277,7 +1325,14 @@ class TexParser:
                     sequence.append("<br />&#160;</li>\12\12")
                     # sequence.append("</li>\12\12")
                 if self.citeFlag and self.token[1:8] == "bibitem":
-                    bibkey = self.readableBibKey(self.token[9:-1])
+                    i = 9
+                    if self.token[i - 1] == "[":
+                        print("BIBITEM:" + self.token)
+                        while self.token[i] != "]":
+                            i += 1
+                        i += 2
+                    bibkey = self.readableBibKey(self.token[i:-1]).\
+                        replace(":", " ")
                     target = self.targetFromBibKey(bibkey)
                     sequence.append('<li id="' + target + '">' +
                                     "<b>(" + bibkey + ")</b> ")
