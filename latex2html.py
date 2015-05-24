@@ -82,6 +82,10 @@ p,ul,ol,li, a.internal, a.bibref {
     font-family: "Century SchoolBook URW", Garamond, Georgia, Times, serif;
     letter-spacing: -0.01em; }
 
+a.external {
+    font-size: 0.9em;
+}
+
 @media screen and (min-width: 680px) {
     p,ul,ol,li, a.internal, a.bibref {
         font-feature-settings: "liga";
@@ -323,6 +327,13 @@ class TexScanner:
 
                 with open(bibname[:-4] + ".latex2html.bbl", "r") as f:
                     bbl = f.read()
+                bbl = bbl.replace("\\harvardurl", "\\url")
+                bbl = bbl.replace("\\harvardand\\", "and")
+                bbl = re.sub(r"\\harvarditem.*?}{",
+                             r"\\bibitem{", bbl, flags=re.DOTALL)
+                for i in range(3):
+                    bbl = re.sub(r"\\bibitem.*?}{",
+                                 r"\\bibitem{", bbl, flags=re.DOTALL)
                 with open(bibname[:-4] + ".latex2html.bbl", "w") as f:
                     i = bbl.find("\n")
                     k = bbl.find("\\bibitem")
@@ -547,27 +558,29 @@ class HTMLPage:
                 '">Home</a></td>\12')
         self.toplink.append("</tr>\12</table>\12\12")
 
-    def activateLinksInStr(self, s):
-        i = 0
-        N = len(s)
-        while i < N:
-            i = s.find("http:", i)
-            if i < 0:
-                i = N
-            else:
-                k = i
-                while (k < N) and (not (s[k] in ' "<>()[]{}')):
-                    k += 1
-                if s[k - 1] == ".":
-                    k -= 1
-                s2 = s[i:k]
-                s = s[0:i] + '<a href="' + s2 + '">' + s2 + '</a>' + s[k:N]
-                i += len(s2) * 2 + 15
-        return (s)
+#     def activateLinksInStr(self, s):
+#         i = 0
+#         N = len(s)
+#         while i < N:
+#             i = s.find("http:", i)
+#             if i < 0:
+#                 i = N
+#             else:
+#                 k = i
+#                 while (k < N) and (not (s[k] in ' "<>()[]{}')):
+#                     k += 1
+#                 if s[k - 1] == ".":
+#                     k -= 1
+#                 s2 = s[i:k]
+#                 s = s[0:i] + '<a href="' + s2 + '">' + s2 + '</a>' + s[k:N]
+#                 i += len(s2) * 2 + 15
+#         return (s)
 
     def activateLinks(self, l):
-        for i in range(len(l)):
-            l[i] = self.activateLinksInStr(l[i])
+        pass
+        # print("Automatic Link activation is deprecated!!!")
+#         for i in range(len(l)):
+#             l[i] = self.activateLinksInStr(l[i])
 
     def crossReferences(self, s):
         # global CROSSReferences
@@ -816,8 +829,9 @@ SECTIONS = ["\\chapter{", "\\section{", "\\subsection{", "\\subsubsection{",
 TermPSequence = SECTIONS + ["\\begin{document}", "\\end{document}",
                             "\\begin{titlepage}", "\\end{titlepage}",
                             "\\newpage", "\\maketitle",
-                            "\\begin{thebibliography}",
-                            "\\end{thebibliography}"]
+                            "\\begin{thebibliography}"
+                            #"\\end{thebibliography}"
+                            ]
 
 TermWSequence = TermPSequence + ["", "\\footnote{",  # "\\caption{"
                                  "\\begin{enumerate}", "\\end{enumerate}",
@@ -837,7 +851,7 @@ TermWSequence = TermPSequence + ["", "\\footnote{",  # "\\caption{"
 
 KnownTokens = ["\\begin{", "\\end{", "\\bibitem{", "\\label{",
                "\\ref{", "\\bibliographystyle{", "\\nocite{",
-               "\\url{", "\\harvardurl{"]
+               "\\url{"]
 
 
 class ParserError(Exception):
@@ -1112,11 +1126,18 @@ class TexParser:
                         s = s + authors + " (" + link + ")"
                 elif self.token[1:7] == "nocite":
                     self.citeFlag = True
-                elif self.token[1:4] == "url" or \
-                        self.token[1:11] == "harvardurl":
+                elif self.token[1:4] == "url":
                     a = self.token.find("{") + 1
                     b = len(self.token) - 1
-                    print("URL: ", self.token[a:b])
+                    link = self.token[a:b].replace("\\textasciitilde ", "~")
+                    if not (link.startswith("http:") or
+                            link.startswith("https:")):
+                        link = "http://" + link
+                    s += '<a class="external" href="' + link + '">' + \
+                        link.replace("http://", "") + '</a>'
+                    print("URL: ", link)
+                elif self.token[1:5] == "href":
+                    print("HREF: " + self.token)
                 elif self.token[1:16] == "includegraphics":
                     w = self.getImgWidth(self.token)
                     name = self.readStr()
@@ -1204,17 +1225,19 @@ class TexParser:
 
     def isP(self, sequence):
         i = len(sequence) - 1
-        while i > 0 and sequence[i][0:2] != "<p" and sequence[i][0:2] != "<li":
+        while i > 0 and sequence[i][0:2] != "<p" and sequence[i][0:3] != "<li":
             i -= 1
         return i > 0 and sequence[i][0:2] == "<p"
 
-    def sequenceOfParagraphs(self, pclass='', palign='', pretext=""):
-        sequence = []
+    def sequenceOfParagraphs(self, pclass='', palign='', pretext="",
+                             preambel=[]):
+        sequence = preambel.copy()
         ptag = 1
         while 1:
             if ptag == 1:
                 while self.token == "":
                     self.token = self.getToken()
+
             if (self.token in (TermPSequence + ["}"])):
                 break
 
@@ -1236,6 +1259,7 @@ class TexParser:
                 ptag = 1
 
             sequence = sequence + self.sequenceOfWords()
+
             if self.token == "\\footnote{":
                 self.footnoteNr = self.footnoteNr + 1
                 fnr = 'FN' + str(self.footnoteNr)
@@ -1312,16 +1336,22 @@ class TexParser:
                 else:
                     sequence.append("\n<br /><h3>Abstract:</h3>\n")
             elif self.token == "\\end{thebibliography}":
+                # print("END BIBLIOGRAPHY")
                 while (sequence[-1][1:4] == "</p") or \
                         (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 sequence.append("</li>\12</ol>\12")
+            elif self.token == "\\begin{thebibliography}":
+                # this is handled on the next higher level, because the
+                # bibliography shall be put on a separate page!
+                pass
             elif (self.token == "\\item") or (self.token[1:8] == "bibitem"):
                 while len(sequence) > 0 and (sequence[-1][1:4] == "</p" or
                                              sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 if len(sequence) == 0 or \
-                        not (sequence[-1] in ["<ol>\12", "<ul>\12"]):
+                        not (sequence[-1].startswith("<ol") or
+                             sequence[-1].startswith("<ul")):
                     sequence.append("<br />&#160;</li>\12\12")
                     # sequence.append("</li>\12\12")
                 if self.citeFlag and self.token[1:8] == "bibitem":
@@ -1363,8 +1393,9 @@ class TexParser:
 
         return sequence
 
-    def mainContent(self):
-        sequence = self.sequenceOfParagraphs()
+    def mainContent(self, preambel=[]):
+        assert isinstance(preambel, list)
+        sequence = self.sequenceOfParagraphs(preambel=preambel)
         if len(sequence) > 0 and sequence[-1][0:2] == "<p":
             sequence = sequence[:-1]
         self.currPage.body = self.currPage.body + sequence
@@ -1496,10 +1527,9 @@ class TexParser:
                 self.currPage.body.append(
                     HeadT[self.mindepth] + BIBLIOGRAPHY_TITLE +
                     HeadTE[self.mindepth] + "\012\012")
-                self.currPage.body.append('<ol class="bibliography">\12')
                 self.bibpageNr = len(self.pageList) - 1
 
-                self.mainContent()
+                self.mainContent(preambel=['<ol class="bibliography">\12'])
                 self.pageList.append(self.currPage)
 
             else:
@@ -1530,6 +1560,8 @@ class TexParser:
 
 
 texFileName = sys.argv[-1]
+if not os.path.splitext(texFileName)[1]:
+    texFileName += ".tex"
 basename = texFileName[:-4]
 
 if os.path.exists(basename + ".l2h"):
