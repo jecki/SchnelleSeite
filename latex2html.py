@@ -1266,14 +1266,14 @@ class TexParser:
                 refnr = 'REF' + str(self.footnoteNr)
                 sequence.append('<a id="' + refnr +
                                 '" class="internal fn" href="#' + fnr +
-                                '"><sup>' + str(self.footnoteNr) +
-                                '</sup></a> ')
+                                '">[' + str(self.footnoteNr) +
+                                ']</a> ')
                 self.token = self.getToken()
                 self.currPage.foot = self.currPage.foot + \
                     self.sequenceOfParagraphs(
                         ' class="footnote"', "", '<a id="' + fnr +
-                        '" class="internal fn" href="#' + refnr + '"><sup>' +
-                        str(self.footnoteNr) + '</sup></a> ')
+                        '" class="internal fn" href="#' + refnr + '">[' +
+                        str(self.footnoteNr) + ']</a> ')
                 self.currPage.foot.append("\12</p>\12")
                 self.leadIn = len(sequence[-2]) + len(sequence[-1])
                 self.token = " "
@@ -1559,6 +1559,14 @@ class TexParser:
         self.writeImages()
 
 
+if len(sys.argv) == 3 and sys.argv[1] == "-css":
+    css_name = sys.argv[2]
+    if os.path.isdir(sys.argv[2]):
+        css_name = os.path.join(sys.argv[2], "latex2html.css")
+    with open(css_name, "w") as f:
+        f.write(CSSStylesheet)
+    sys.exit()
+
 texFileName = sys.argv[-1]
 if not os.path.splitext(texFileName)[1]:
     texFileName += ".tex"
@@ -1634,6 +1642,7 @@ if texFileName[-4:].lower() != ".tex":
           -l name       : language (e.g. "en-US")
           -x            : create xhtml instead of html pages
           -i            : duplicate table of contents as "index.html" file
+          -css path     : dump css to path
     ''')
 else:
     if LANG == "de":
