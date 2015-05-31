@@ -303,7 +303,8 @@ def citation_metadata(entry, entryname=""):
                       (key_name, url))
         elif key_lower not in BLACK_LIST:
             md.append('<meta name="citation_%s" content="%s" />' %
-                      (replace_list.get(key_lower, key_lower), entry[key]))
+                      (replace_list.get(key_lower, key_lower),
+                       entry[key].replace('"', "'")))
     md.append("\n")
     md_str = "\n".join(md)
     return md_str

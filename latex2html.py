@@ -72,13 +72,13 @@ images = {"next.jpg": b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x
 CSSStylesheet = '''
 body { max-width: 760px; min-width: 320px;
        margin-left:auto; margin-right:auto;
-       padding-left: 8px; padding-right: 8px; }
+       padding-left: 16px; padding-right: 16px; }
 
-a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr,b,i {
+a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr, a.internal {
     font-family:"Liberation Sans", Arial, Helvetica, sans-serif;
 }
 
-p,ul,ol,li, a.internal, a.bibref {
+p,ul,ol,li, a.bibref {
     font-family: "Century SchoolBook URW", Garamond, Georgia, Times, serif;
     letter-spacing: -0.01em; }
 
@@ -698,10 +698,7 @@ class HTMLPage:
                 [self.genPDFMessage()] + self.tail
 
         elif self.type == "TableOfContents":
-            if METADATA_BLOB:
-                self.head[0] = self.head[0].replace("$metadata", METADATA_BLOB)
-            else:
-                self.head[0] = self.head[0].replace("$metadata", "")
+            self.head[0] = self.head[0].replace("$metadata", "")
             self.createLink()
             self.top = [HTMLPageTop] + self.toplink + ['<hr noshade="noshade" />\12'] + \
                        ['<table width="100%" summary="table of contents">'
