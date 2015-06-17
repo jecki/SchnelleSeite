@@ -366,10 +366,16 @@ class TexScanner:
             s = re.sub(r"\\\-", "", s)
             s = re.sub(r"\\\_", "_", s)
             s = re.sub(r"\\\/", "", s)
-            s = re.sub(r"\"`", '"', s)
-            s = re.sub(r"\"'", '"', s)
-            s = re.sub(r"``", '"', s)
-            s = re.sub(r"''", '"', s)
+            if LANG == "de":
+                s = re.sub(r"\"`", '&bdquo;', s)
+                s = re.sub(r"``", '&bdquo;', s)
+                s = re.sub(r"\"'", '&ldquo;', s)
+                s = re.sub(r"''", '&ldquo;', s)
+            else:
+                s = re.sub(r"\"`", '&ldquo;', s)
+                s = re.sub(r"``", '&ldquo;', s)
+                s = re.sub(r"\"'", '&rdquo;', s)
+                s = re.sub(r"''", '&rdquo;', s)
             s = re.sub(r'""', "", s)
             s = re.sub(r"\\\~{ }", "~", s)
             s = re.sub(r"---", "-", s)
@@ -1647,7 +1653,7 @@ if texFileName[-4:].lower() != ".tex":
     ''')
 else:
     if LANG == "de":
-        TOC_TITLE = "Inhalts<wbr />verzeichnis"
+        TOC_TITLE = "Inhalt"
         BIBLIOGRAPHY_TITLE = "Literaturverzeichnis"
         AUTHOR_STR = "Autor"
         BIB_STR = "Bibliographische Informationen"
