@@ -708,6 +708,10 @@ class HTMLPage:
                 [self.genPDFMessage()] + self.tail
 
         elif self.type == "TableOfContents":
+            self.head[0] = re.sub(
+                r'\<meta name="description".*?>', "", self.head[0])
+            self.head[0] = re.sub(
+                r'\<meta name="keywords".*?>', "", self.head[0])
             self.head[0] = self.head[0].replace("$metadata", "")
             self.createLink()
             self.top = [HTMLPageTop] + self.toplink + ['<hr noshade="noshade" />\12'] + \
@@ -749,6 +753,10 @@ class HTMLPage:
                 [self.genPDFMessage(style="font-weight:normal")] + self.tail
 
         elif self.type == "NormalPage":
+            self.head[0] = re.sub(
+                r'\<meta name="description".*?>', "", self.head[0])
+            self.head[0] = re.sub(
+                r'\<meta name="keywords".*?>', "", self.head[0])
             self.head[0] = self.head[0].replace("$metadata", "")
             self.createLink()
 
