@@ -25,6 +25,7 @@ not work as expected!
 TODO: Support for mathematical formulae and MathML
 """
 
+#
 
 import os
 import re
@@ -141,6 +142,37 @@ h3 { font-size:1.4em; paddint-top: 0.5em; }
 h4 { font-size:1.3em; font-weight:bold; padding-top: 0.4em; }
 h5 { font-size:1.2em; font-weight:bold; padding-top: 0.3em; }
 h6 { font-size:1.1em; font-weight:bold; padding-top: 0.2em; }
+
+
+.share-btn {
+    display: inline-block;
+    color: #ffffff;
+    border: none;
+    padding: 0.1em;
+    width: 2em;
+    box-shadow: 0 2px 0 0 rgba(0,0,0,0.2);
+    outline: none;
+    text-align: center;
+}
+
+.share-btn:hover {
+  color: #e8e8e8;
+  text-decoration:none;
+}
+
+.share-btn:active {
+  position: relative;
+  top: 2px;
+  box-shadow: none;
+  color: #e2e2e2;
+  outline: none;
+}
+
+.share-btn.twitter     { background: #55acee; }
+.share-btn.google-plus { background: #dd4b39; }
+.share-btn.facebook    { background: #3B5998; }
+.share-btn.linkedin    { background: #4875B4; }
+.share-btn.email       { background: #444444; }
 '''
 
 HTMLPageHead = '''<!DOCTYPE HTML>
@@ -181,7 +213,9 @@ HTMLPageTop = '''
  summary="page heading">
 <tr>
 <td class="title">
-<h1 style="text-align:center;"><span id="pagetop" name="pagetop">$doctitle</span></h1>
+<h1 style="text-align:center;">
+<span id="pagetop" name="pagetop">$doctitle</span>
+</h1>
 </td>
 </tr>
 </table>
@@ -192,6 +226,26 @@ HTMLTitlePageBottom = '''
 '''
 
 HTMLPageTail = '''
+
+<p alignt="center"
+ style="text-align:center; font-family:sans-serif; font-weight:bold;">
+<a href="http://twitter.com/share?url=$url&text=$title" target="_blank"
+   class="share-btn twitter">
+  t
+</a>
+<a href="http://www.facebook.com/sharer/sharer.php?u=$url" target="_blank"
+   class="share-btn facebook">
+  f
+</a>
+<a href="https://plus.google.com/share?url=$url" target="_blank"
+   class="share-btn google-plus">
+  g+
+</a>
+<a href="mailto:?subject=$title&body=$url" class="share-btn email">
+  mail
+</a>
+</p>
+<br />
 </body>
 
 </html>
@@ -659,9 +713,23 @@ class HTMLPage:
             bottom = ""
         return bottom
 
+    def strip_title(self, title):
+        title = title.replace("<br>", ".")
+        title = title.replace("<br />", ".")
+        title = title.replace("<br/>", ".")
+        title = re.sub("\\n|(<.*?>)", " ", title)
+        return title
+
     def flush(self):
+        pr_title = self.strip_title(PROJECT_TITLE)
         if self.title == "title ?":
-            self.title = PROJECT_TITLE
+            self.title = pr_title
+        else:
+            self.title = self.strip_title(self.title)
+
+        if self.title != pr_title:
+            self.title = re.sub(r"(\?|\.|!).*", "", pr_title) + ": " + \
+                self.title
         if len(self.title) > 256:
             self.title = self.title[0:256]
 
@@ -679,6 +747,10 @@ class HTMLPage:
         self.head = [pg_head]
 
         self.tail = [HTMLPageTail]
+        url = os.path.dirname(PDFURL) + "/" + self.name
+        self.tail[0] = self.tail[0].replace("$url", url)
+        # title = re.sub("\\n|(<.*?>)", "", title)
+        self.tail[0] = self.tail[0].replace("$title", self.title)
 
         if self.type == "TitlePage":
             if METADATA_BLOB:
