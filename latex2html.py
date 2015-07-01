@@ -148,6 +148,9 @@ h6 { font-size:1.1em; font-weight:bold; padding-top: 0.2em; }
     display: inline-block;
     color: #ffffff;
     border: none;
+    -webkit-border-radius: 1em;
+    -moz-border-radius: 1em;
+    border-radius: 1em;    
     padding: 0.1em;
     width: 2em;
     box-shadow: 0 2px 0 0 rgba(0,0,0,0.2);
@@ -233,16 +236,16 @@ HTMLPageTail = '''
    class="share-btn twitter">
   t
 </a>
-<a href="http://www.facebook.com/sharer/sharer.php?u=$url" target="_blank"
-   class="share-btn facebook">
-  f
-</a>
 <a href="https://plus.google.com/share?url=$url" target="_blank"
    class="share-btn google-plus">
   g+
 </a>
+<a href="http://www.facebook.com/sharer/sharer.php?u=$url" target="_blank"
+   class="share-btn facebook">
+  f
+</a>
 <a href="mailto:?subject=$title&body=$url" class="share-btn email">
-  mail
+  @
 </a>
 </p>
 <br />
