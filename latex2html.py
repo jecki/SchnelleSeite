@@ -230,7 +230,7 @@ HTMLTitlePageBottom = '''
 
 HTMLPageTail = '''
 
-<p alignt="center"
+<p align="center"
  style="text-align:center; font-family:sans-serif; font-weight:bold;">
 <a href="http://twitter.com/share?url=$url&text=$title" target="_blank"
    class="share-btn twitter">
