@@ -199,6 +199,8 @@ HTMLPageHead = '''<!DOCTYPE HTML>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 $metadata
 <link rel="stylesheet" type="text/css" href="$stylesheetname" />
+<link rel="top" href="$topname.html" />
+<link rel="contents" href="toc.html" />
 $prevpg
 $nextpg
 </head>
@@ -742,9 +744,9 @@ class HTMLPage:
         prev_pg = ""
         next_pg = ""
         if self.prev is not None:
-            prev_pg = '<link rel="prev" href="' + self.prev.name + '">'
+            prev_pg = '<link rel="prev" href="' + self.prev.name + '" />'
         if self.next is not None:
-            next_pg = '<link rel="prev" href="' + self.next.name + '">'
+            next_pg = '<link rel="next" href="' + self.next.name + '" />'
         pg_head = re.sub(r"\$prevpg", prev_pg, pg_head)
         pg_head = re.sub(r"\$nextpg", next_pg, pg_head)
         self.head = [pg_head]
@@ -1006,6 +1008,7 @@ class TexParser:
         HTMLPageHead = re.sub(r"\$robots", "follow", HTMLPageHead)
         HTMLPageHead = re.sub(
             r"\$stylesheetname", DESTINATION_NAME + ".css", HTMLPageHead)
+        HTMLPageHead = re.sub(r"\$topname", DESTINATION_NAME, HTMLPageHead)
         HTMLPageHead = re.sub(r"\$lang", LANG, HTMLPageHead)
 
         HTMLPageTop = re.sub(r"\$author", AUTHOR, HTMLPageTop)
