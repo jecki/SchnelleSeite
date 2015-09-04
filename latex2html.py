@@ -940,7 +940,7 @@ TermWSequence = TermPSequence + ["", "\\footnote{",  # "\\caption{"
                                  "\\begin{verbatim}", "\\end{verbatim}"]
 
 KnownTokens = ["\\begin{", "\\end{", "\\bibitem{", "\\label{",
-               "\\ref{", "\\bibliographystyle{", "\\nocite{",
+               "\\ref{", "\\pageref{", "\\bibliographystyle{", "\\nocite{",
                "\\url{"]
 
 
@@ -966,6 +966,7 @@ class TexParser:
         self.nodeCount = 0
         self.chapter = [0, 0, 0, 0, 0, 0]
         self.chapterName = ""
+        self.footnoteFlag = False
         self.footnoteNr = 0
         self.leadIn = 0
         self.depth = 0
@@ -1252,13 +1253,21 @@ class TexParser:
                         CROSSReferences[name] = (
                             str(self.figureNr), "node" +
                             str(len(self.pageList) - 1) + ".html#" + name)
+                    elif self.footnoteFlag:
+                        CROSSReferences[name] = (
+                            str(self.footnoteNr), "node" +
+                            str(len(self.pageList) - 1) + ".html#" +
+                            "FN" + str(self.footnoteNr))
                     else:
                         s = s + '<span id="' + name + '"> </span>'
                         CROSSReferences[name] = (
                             self.chapterName, "node" +
                             str(len(self.pageList) - 1) + ".html#" + name)
-                elif self.token[1:4] == "ref":
-                    name = self.token[5:-1]
+                elif self.token[1:4] == "ref" or self.token[1:8] == "pageref":
+                    if self.token[1:4] == "ref":
+                        name = self.token[5:-1]
+                    else:
+                        name = self.token[9:-1]
                     ref = "TEXREF" + name
                     link = "TEXLINK" + name
                     s = s + ' <a href="' + ref + '">' + link + '</a>'
@@ -1352,6 +1361,7 @@ class TexParser:
 
             if self.token == "\\footnote{":
                 self.footnoteNr = self.footnoteNr + 1
+                self.footnoteFlag = True
                 fnr = 'FN' + str(self.footnoteNr)
                 refnr = 'REF' + str(self.footnoteNr)
                 sequence.append('<a id="' + refnr +
@@ -1365,6 +1375,7 @@ class TexParser:
                         '" class="internal fn" href="#' + refnr + '">[' +
                         str(self.footnoteNr) + ']</a> ')
                 self.currPage.foot.append("\12</p>\12")
+                self.footnoteFlag = False
                 self.leadIn = len(sequence[-2]) + len(sequence[-1])
                 self.token = " "
                 ptag = 0
