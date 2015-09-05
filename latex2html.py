@@ -77,13 +77,16 @@ images = {"next.jpg": b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x
 CSSStylesheet = '''
 body { max-width: 760px; min-width: 320px;
        margin-left:auto; margin-right:auto;
-       padding-left: 16px; padding-right: 16px; }
+       padding-left: 16px; padding-right: 16px;
+       font-size:1.35em; line-height:1.5em; }
 
 a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr, a.internal {
     font-family:"Liberation Sans", Arial, Helvetica, sans-serif;
 }
 
-p,ul,ol,li, a.bibref {
+pre { font-size:0.9em; line-height:1.5em; }
+
+p,ul,ol,li,dd,dt,dl, a.bibref {
     font-family: "Century SchoolBook URW", Garamond, Georgia, Times, serif;
     letter-spacing: -0.01em; }
 
@@ -92,22 +95,22 @@ a.external {
 }
 
 @media screen and (min-width: 680px) {
-    p,ul,ol,li, a.internal, a.bibref {
+    p,ul,ol,li,dl,dd,dt, a.internal, a.bibref {
         font-feature-settings: "liga";
     }
 }
 
 @media screen and (min-width: 1040px) {
-    p,ul,ol,li, a.internal, a.bibref {
+    p,ul,ol,li,dl,dd,dt, a.internal, a.bibref {
         text-rendering: optimizeLegibility;
     }
 }
 
-p,ul,ol,li, a.internal { color: #303030; }
+p,ul,ol,li,dl,dd,dt, a.internal { color: #303030; }
 a.bibref { color: #202070; }
 
-p, li           { font-size:1.35em; line-height:1.5em; hyphens: auto; }
-li > p          { font-size:1.0em; }
+p, li, dd, dt   {  hyphens: auto; color:#303030; }
+
 
 /* ol.bibliography { font-size:0.8em; line-height:0.9em; } */
 
@@ -116,15 +119,18 @@ p.figure        { font-size:1.1em; line-height:1.3em; text-align:center; }
 
 div.caption     { font-size:1em; line-height:1.1em; text-align:center; }
 
+dl, ol, ul { padding-top: 0.5em; }
 
 td              { font-size:1.2em; line-height:1.05em; }
 td.title > h1   { line-height: 1.2em; }
 td.title > h2   { line-height: 1.2em; }
 td.title        { background-color:#F4F4F4; word-wrap: break-word; }
-td.toplink      { background-color:#F4F4F4; }
-td.bottomlink   { background-color:#FFFFFF; }
-td.toc          { background-color:#F4F4F4; line-height: 1.4em; }
-td.tochilit     { background-color:#E7E6E7; line-height: 1.4em; }
+td.toplink      { background-color:#F4F4F4; font-size: 1.0em; }
+td.bottomlink   { background-color:#FFFFFF; font-size: 1.0em; }
+td.toc          { background-color:#F4F4F4; font-size: 1.0em;
+                  line-height: 1.4em; }
+td.tochilit     { background-color:#E7E6E7; font-size: 1.0em;
+                  line-height: 1.4em; }
 
 a:link         { text-decoration:none; }
 a:visited      { text-decoration:none; }
@@ -150,7 +156,7 @@ h6 { font-size:1.1em; font-weight:bold; padding-top: 0.2em; }
     border: none;
     -webkit-border-radius: 1em;
     -moz-border-radius: 1em;
-    border-radius: 1em;    
+    border-radius: 1em;
     padding: 0.1em;
     width: 2em;
     box-shadow: 0 2px 0 0 rgba(0,0,0,0.2);
@@ -931,6 +937,7 @@ TermWSequence = TermPSequence + ["", "\\footnote{",  # "\\caption{"
                                  "\\begin{quotation}", "\\end{quotation}",
                                  "\\begin{enumeration}", "\\end{enumeration}",
                                  "\\begin{itemize}", "\\end{itemize}",
+                                 "\\begin{description}", "\\end{description}",
                                  "\\item",  # , "\\bibitem",
                                  "\\begin{center}", "\\end{center}",
                                  "\\begin{flushleft}", "\\end{flushleft}",
@@ -976,6 +983,7 @@ class TexParser:
         self.citeFlag = False
         self.figureFlag = False
         self.figureNr = 0
+        self.itemEnv = []  # stack for nested itemize, enumerate, description..
 
     def copyImage(self, name):
         print("processing: " + name)
@@ -1069,6 +1077,10 @@ class TexParser:
 
     def getToken(self):
         token = self.scanner.getToken()
+
+        if token not in KnownTokens and (token[0:5] == "\\cite" or token[0:8] == "\\bibitem"):
+            print("TOKEN:", token)
+
         if (token in KnownTokens) or (token[0:5] == "\\cite") or \
                 token[0:8] == "\\bibitem":
             i = 1
@@ -1167,7 +1179,8 @@ class TexParser:
         sequence = []
         s = ""
         while (not (self.token in TermWSequence)) and \
-                (not (self.token[1:8] == "bibitem")):
+                (not (self.token[1:8] == "bibitem")) and \
+                (not (self.token[1:5] == "item")):
             if self.token == "\\\\" or self.token == "\\linebreak":
                 s = s + "<br />\12"
             elif self.token[0:2] == "{\\":
@@ -1386,10 +1399,12 @@ class TexParser:
                 sequence.append("<BLOCKQUOTE>\12")
             elif self.token in ["\\end{quote}", "\\end{quotation}"]:
                 sequence.append("</BLOCKQUOTE>\12")
+
             elif self.token == "\\begin{enumerate}":
                 if sequence[-1][0:2] == "<p":
                     sequence = sequence[:-1]
                 sequence.append("<ol>\12")
+                self.itemEnv.append("ol")
                 ptag = 0
             elif self.token == "\\end{enumerate}":
                 while (sequence[-1][1:4] == "</p") or \
@@ -1398,10 +1413,13 @@ class TexParser:
                 if self.isP(sequence):
                     sequence.append("</p>")
                 sequence.append("</li>\12</ol>\12")
+                self.itemEnv.pop()
+
             elif self.token == "\\begin{itemize}":
                 if sequence[-1][0:2] == "<p":
                     sequence = sequence[:-1]
                 sequence.append("<ul>\12")
+                self.itemEnv.append("ul")
                 ptag = 0
             elif self.token == "\\end{itemize}":
                 while (sequence[-1][1:4] == "</p") or \
@@ -1410,6 +1428,23 @@ class TexParser:
                 if self.isP(sequence):
                     sequence.append("</p>")
                 sequence.append("</li>\12</ul>\12")
+                self.itemEnv.pop()
+
+            elif self.token == "\\begin{description}":
+                if sequence[-1][0:2] == "<p":
+                    sequence = sequence[:-1]
+                sequence.append("<dl>\12")
+                self.itemEnv.append("dl")
+                ptag = 0
+            elif self.token == "\\end{description}":
+                while (sequence[-1][1:4] == "</p") or \
+                        (sequence[-1][0:2] == "<p"):
+                    sequence = sequence[:-1]
+                if self.isP(sequence):
+                    sequence.append("</p>")
+                sequence.append("</dd>\12</dl>\12")
+                self.itemEnv.pop()
+
             elif self.token == "\\begin{figure}":
                 if sequence[-1][0:2] == "<p":
                     sequence = sequence[:-1]
@@ -1424,6 +1459,7 @@ class TexParser:
                 pclass = ''
                 sequence.append("\n</p>\n")
                 self.figureFlag = False
+
             elif self.token == "\\begin{verbatim}":
                 sequence.append("\n<pre>\n")
                 while 1:
@@ -1433,6 +1469,7 @@ class TexParser:
                     else:
                         sequence.append(line)
                 sequence.append("\n</pre>\n")
+
             elif self.token == "\\begin{abstract}":
                 if LANG == "de":
                     sequence.append(
@@ -1449,13 +1486,26 @@ class TexParser:
                 # this is handled on the next higher level, because the
                 # bibliography shall be put on a separate page!
                 pass
-            elif (self.token == "\\item") or (self.token[1:8] == "bibitem"):
-                while len(sequence) > 0 and (sequence[-1][1:4] == "</p" or
-                                             sequence[-1][0:2] == "<p"):
+            elif (self.token[0:5] == "\\item") or \
+                    (self.token[0:8] == "\\bibitem"):
+                while (sequence[-1][1:4] == "</p" or
+                       sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
-                if len(sequence) == 0 or \
-                        not (sequence[-1].startswith("<ol") or
-                             sequence[-1].startswith("<ul")):
+                i = 1
+                while not (sequence[-i][0:3] == "<ol" or
+                           sequence[-i][0:3] == "<ul" or
+                           sequence[-i][0:3] == "<dl" or
+                           sequence[-i][0:3] == "<li" or
+                           sequence[-i][0:3] == "<dt"):
+                    i += 1
+
+#                 if len(sequence) == 0 or \
+#                         not (sequence[-1].startswith("<ol") or
+#                              sequence[-1].startswith("<ul") or
+#                              sequence[-1].startswith("<dl")):
+                if sequence[-i].startswith("<dt"):
+                    sequence.append("<br />&#160;</dd>\12\12")
+                elif sequence[-i].startswith("<li"):
                     sequence.append("<br />&#160;</li>\12\12")
                     # sequence.append("</li>\12\12")
                 if self.citeFlag and self.token[1:8] == "bibitem":
@@ -1471,7 +1521,13 @@ class TexParser:
                     sequence.append('<li id="' + target + '">' +
                                     "<b>(" + bibkey + ")</b> ")
                 else:
-                    sequence.append("<li>")
+                    if self.itemEnv[-1] == "dl":
+                        a = self.token.find("[") + 1
+                        b = self.token.find("]")
+                        sequence.append("<dt>" + self.token[a:b] +
+                                        "</dt>\n<dd>")
+                    else:
+                        sequence.append("<li>")
                 ptag = 0
             elif self.token in ["\\end{center}", "\\end{flushleft}",
                                 "\\end{flushright}"]:
@@ -1483,9 +1539,11 @@ class TexParser:
                 else:
                     i = len(sequence) - 1
                     while i >= 0 and sequence[i].find("<li") < 0 \
+                            and sequence[i].find("<dd") < 0 \
                             and sequence[i].find("<p") < 0:
                         i -= 1
-                    if sequence[i].find("<li") < 0:
+                    if sequence[i].find("<li") < 0 and \
+                            sequence[i].find("<dd") < 0:
                         sequence.append("\12</p>\12")
                     else:
                         sequence.append("\12")
