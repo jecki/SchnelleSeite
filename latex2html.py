@@ -84,7 +84,10 @@ a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr, a.internal {
     font-family:"Liberation Sans", Arial, Helvetica, sans-serif;
 }
 
-pre { font-size:0.9em; line-height:1.5em; }
+p.citeinfo { font-family:"Lucida Console", Monaco, monospace;
+             font-size:0.75em; line-height:1.3em; }
+
+pre, code { font-size:0.8em; line-height:1.4em; }
 
 p,ul,ol,li,dd,dt,dl, a.bibref {
     font-family: "Century SchoolBook URW", Garamond, Georgia, Times, serif;
@@ -114,22 +117,22 @@ p, li, dd, dt   {  hyphens: auto; color:#303030; }
 
 /* ol.bibliography { font-size:0.8em; line-height:0.9em; } */
 
-p.footnote      { font-size:1.2em; line-height:1.3em; }
-p.figure        { font-size:1.1em; line-height:1.3em; text-align:center; }
+p.footnote      { font-size:0.85em; line-height:1.3em; }
+p.figure        { font-size:0.9em; line-height:1.3em; text-align:center; }
 
-div.caption     { font-size:1em; line-height:1.1em; text-align:center; }
+div.caption     { font-size:0.8em; line-height:1.1em; text-align:center; }
 
 dl, ol, ul { padding-top: 0.5em; }
 
-td              { font-size:1.2em; line-height:1.05em; }
+td              { font-size:0.9em; line-height:1.05em; }
 td.title > h1   { line-height: 1.2em; }
 td.title > h2   { line-height: 1.2em; }
 td.title        { background-color:#F4F4F4; word-wrap: break-word; }
-td.toplink      { background-color:#F4F4F4; font-size: 1.0em; }
-td.bottomlink   { background-color:#FFFFFF; font-size: 1.0em; }
-td.toc          { background-color:#F4F4F4; font-size: 1.0em;
+td.toplink      { background-color:#F4F4F4; font-size: 0.95em; }
+td.bottomlink   { background-color:#FFFFFF; font-size: 0.95em; }
+td.toc          { background-color:#F4F4F4; font-size: 0.95em;
                   line-height: 1.4em; }
-td.tochilit     { background-color:#E7E6E7; font-size: 1.0em;
+td.tochilit     { background-color:#E7E6E7; font-size: 0.95em;
                   line-height: 1.4em; }
 
 a:link         { text-decoration:none; }
@@ -225,7 +228,7 @@ HTMLPageTop = '''
 <tr>
 <td class="title">
 <h1 style="text-align:center;">
-<span id="pagetop" name="pagetop">$doctitle</span>
+<span id="pagetop">$doctitle</span>
 </h1>
 </td>
 </tr>
@@ -238,23 +241,15 @@ HTMLTitlePageBottom = '''
 
 HTMLPageTail = '''
 
-<p align="center"
+<p id="share" align="center"
  style="text-align:center; font-family:sans-serif; font-weight:bold;">
 <a href="http://twitter.com/share?url=$url&text=$title" target="_blank"
-   class="share-btn twitter">
-  t
-</a>
+   class="share-btn twitter">t</a>
 <a href="https://plus.google.com/share?url=$url" target="_blank"
-   class="share-btn google-plus">
-  g+
-</a>
+   class="share-btn google-plus">g+</a>
 <a href="http://www.facebook.com/sharer/sharer.php?u=$url" target="_blank"
-   class="share-btn facebook">
-  f
-</a>
-<a href="mailto:?subject=$title&body=$url" class="share-btn email">
-  @
-</a>
+   class="share-btn facebook">f</a>
+<a href="mailto:?subject=$title&body=$url" class="share-btn email">@</a>
 </p>
 <br />
 </body>
@@ -781,8 +776,8 @@ class HTMLPage:
                 bib.append("\n<br /><h3>%s</h3>\n" % BIB_STR)
                 if CITATION_INFO:
                     bib.append("\n<b>%s</b>\n<br />\n" % CITE_STR)
-                    bib.extend(["<code>", CITATION_INFO, "</code>\n",
-                                "<br />\n<br />\n"])
+                    bib.extend(['<p class="citeinfo">', CITATION_INFO,
+                                "</p>\n", "<br />\n"])
                 if BIBTEX_INFO:
                     bib.append("\n<b>%s</b>\n" % BIBTEX_STR)
                     bib.extend(["<pre>", BIBTEX_INFO, "</pre>\n"])
@@ -1063,7 +1058,13 @@ class TexParser:
             p = page.flush()
             if page.name == INDEX_FILE:
                 f = open("index.html", "w")
-                f.write(p)
+                i = p.find("</head>")
+                canonical = '<link rel="canonical" href="' + \
+                            DESTINATION_NAME + '.html" />\n'
+                # p = p[0:i] + canonical + p[i:]
+                f.write(p[0:i])
+                f.write(canonical)
+                f.write(p[i:])
                 f.close()
         for name in IMAGENames:
             self.copyImage(name)
@@ -1078,8 +1079,8 @@ class TexParser:
     def getToken(self):
         token = self.scanner.getToken()
 
-        if token not in KnownTokens and (token[0:5] == "\\cite" or token[0:8] == "\\bibitem"):
-            print("TOKEN:", token)
+#         if token not in KnownTokens and (token[0:5] == "\\cite" or token[0:8] == "\\bibitem"):
+#             print("TOKEN:", token)
 
         if (token in KnownTokens) or (token[0:5] == "\\cite") or \
                 token[0:8] == "\\bibitem":
@@ -1096,15 +1097,15 @@ class TexParser:
 
     def interpretFontType(self, ltxStr):
         if ltxStr == "em":
-            return ["<EM>", "</EM>"]
+            return ["<em>", "</em>"]
         elif ltxStr == "bf":
-            return ["<B>", "</B>"]
+            return ["<strong>", "</strong>"]
         elif ltxStr == "it":
-            return ["<I>", "</I>"]
+            return ["<em>", "</em>"]
         elif ltxStr == "tt":
-            return ["<TT>", "</TT>"]
+            return ["<kbd>", "</kbd>"]
         elif ltxStr == "small":
-            return ["<SMALL>", "</SMALL>"]
+            return ["<small>", "</small>"]
         elif ltxStr == "large":
             return ['<span style="font-size:1.2rem;">', "</span>"]
         elif ltxStr == "Large":
@@ -1152,6 +1153,11 @@ class TexParser:
         return "".join(pages), self.readableBibKey("".join(author))
 
     def getImgWidth(self, s):
+        # the following would be needed to multiline graphics commands!!!
+        #         self.token = self.getToken()
+        #         while self.token != "{":
+        #             s += self.token
+        #             self.token = self.getToken()
         i = s.find("[") + 1
         k = s.find("]")
         if i > 0 and k > i:
@@ -1249,6 +1255,7 @@ class TexParser:
                     w = self.getImgWidth(self.token)
                     name = self.readStr()
                     IMAGENames.append(name)
+                    name = os.path.basename(name)
                     if w > 0.0:
                         SCALEFactors[name] = w / 12.0
                     if CONVERTEPS and name.endswith(".eps"):
@@ -1491,23 +1498,19 @@ class TexParser:
                 while (sequence[-1][1:4] == "</p" or
                        sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
-                i = 1
-                while not (sequence[-i][0:3] == "<ol" or
-                           sequence[-i][0:3] == "<ul" or
-                           sequence[-i][0:3] == "<dl" or
-                           sequence[-i][0:3] == "<li" or
-                           sequence[-i][0:3] == "<dt"):
-                    i += 1
+                if self.token[0:5] == "\\item":
+                    i = 1
+                    while not (sequence[-i][0:3] == "<ol" or
+                               sequence[-i][0:3] == "<ul" or
+                               sequence[-i][0:3] == "<dl" or
+                               sequence[-i][0:3] == "<li" or
+                               sequence[-i][0:3] == "<dt"):
+                        i += 1
+                    if sequence[-i].startswith("<dt"):
+                        sequence.append("<br />&#160;</dd>\12\12")
+                    elif sequence[-i].startswith("<li"):
+                        sequence.append("<br />&#160;</li>\12\12")
 
-#                 if len(sequence) == 0 or \
-#                         not (sequence[-1].startswith("<ol") or
-#                              sequence[-1].startswith("<ul") or
-#                              sequence[-1].startswith("<dl")):
-                if sequence[-i].startswith("<dt"):
-                    sequence.append("<br />&#160;</dd>\12\12")
-                elif sequence[-i].startswith("<li"):
-                    sequence.append("<br />&#160;</li>\12\12")
-                    # sequence.append("</li>\12\12")
                 if self.citeFlag and self.token[1:8] == "bibitem":
                     i = 9
                     if self.token[i - 1] == "[":
