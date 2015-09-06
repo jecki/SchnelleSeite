@@ -18,14 +18,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 
-Version 0.2 (May, 1st 2015)
+Version 0.2.1 (September, 6th 2015)
 
 WARNING: This program has hardly been tested and will most probably
 not work as expected!
 TODO: Support for mathematical formulae and MathML
 """
-
-#
 
 import os
 import re
@@ -37,7 +35,7 @@ import time
 
 # Globals and predefined constants
 PROJECT_TITLE = "title ?"
-TOC_TITLE = "Table of Contents"
+TOC_TITLE = "Contents"
 BIBLIOGRAPHY_TITLE = "Bibliography"
 AUTHOR_STR = "Author"
 DATE_STR = "Date"
@@ -130,9 +128,9 @@ td.title > h2   { line-height: 1.2em; }
 td.title        { background-color:#F4F4F4; word-wrap: break-word; }
 td.toplink      { background-color:#F4F4F4; font-size: 0.95em; }
 td.bottomlink   { background-color:#FFFFFF; font-size: 0.95em; }
-td.toc          { background-color:#F4F4F4; font-size: 0.95em;
+td.toc          { background-color:#F4F4F4; font-size: 0.90em;
                   line-height: 1.4em; }
-td.tochilit     { background-color:#E7E6E7; font-size: 0.95em;
+td.tochilit     { background-color:#E7E6E7; font-size: 0.90em;
                   line-height: 1.4em; }
 
 a:link         { text-decoration:none; }
@@ -145,13 +143,15 @@ a.internal:visited      { color:blue; }
 a.internal:hover        { color:red; }
 a.internal:active       { color:blue; }
 
-h1 { font-size:1.6em; }
-h2 { font-size:1.5em; padding-top: 0.5em; }
-h3 { font-size:1.4em; paddint-top: 0.5em; }
-h4 { font-size:1.3em; font-weight:bold; padding-top: 0.4em; }
-h5 { font-size:1.2em; font-weight:bold; padding-top: 0.3em; }
-h6 { font-size:1.1em; font-weight:bold; padding-top: 0.2em; }
-
+h1 { font-size:1.6em; line-height:1.3em; }
+h2 { font-size:1.5em; line-height:1.3em; padding-top: 0.5em; }
+h3 { font-size:1.4em; line-height:1.3em; padding-top: 0.5em; }
+h4 { font-size:1.3em; line-height:1.3em; font-weight:bold; 
+     padding-top: 0.4em; }
+h5 { font-size:1.2em; line-height:1.3em; font-weight:bold; 
+     padding-top: 0.3em; }
+h6 { font-size:1.1em; line-height:1.3em; font-weight:bold; 
+     padding-top: 0.2em; }
 
 .share-btn {
     display: inline-block;
@@ -1489,6 +1489,7 @@ class TexParser:
                         (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 sequence.append("</li>\12</ol>\12")
+                self.itemEnv.pop()
             elif self.token == "\\begin{thebibliography}":
                 # this is handled on the next higher level, because the
                 # bibliography shall be put on a separate page!
@@ -1694,6 +1695,7 @@ class TexParser:
                     HeadTE[self.mindepth] + "\012\012")
                 self.bibpageNr = len(self.pageList) - 1
 
+                self.itemEnv.append("ol")
                 self.mainContent(preambel=['<ol class="bibliography">\12'])
                 self.pageList.append(self.currPage)
 
