@@ -3,7 +3,7 @@
 
 """latex2html.py - Converts LaTeX documents into HTML documents.
 
-Copyright 2001-2015  by Eckhart Arnold
+Copyright 2015  by Eckhart Arnold
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 
-Version 0.3.0 (September, 16th 2015)
+Version 0.2.1 (September, 6th 2015)
 
-WARNING: This program is not well structured and has seen little testing.
-Use as you like, but do not expect it to work for any particluar LaTeX-
-document.
+WARNING: This program has hardly been tested and will most probably
+not work as expected!
+TODO: Support for mathematical formulae and MathML
 """
 
 import os
@@ -207,7 +207,6 @@ HTMLPageHead = '''<!DOCTYPE HTML>
 <meta http-equiv="content-style-type"  content="text/css" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 $metadata
-$mathjax
 <link rel="stylesheet" type="text/css" href="$stylesheetname" />
 <link rel="top" href="$topname.html" />
 <link rel="contents" href="toc.html" />
@@ -217,11 +216,6 @@ $nextpg
 
 <body style="background-color:white">
 '''
-
-MATHJAX = '''<script type="text/javascript"
-  src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML&locale=$LOCALE">
-</script>'''
-
 
 # <body style="background-color:#FFFFF0"> <!-- beige backgrounde -->
 # <link rel=stylesheet type="text/css" media="screen" href="screenstyle.css">
@@ -265,8 +259,7 @@ HTMLPageTail = '''
 '''
 
 CHARS = string.ascii_letters + "äöüÄÖÜß" + "áàéèúùóòíìâêûôîÁÀÉÈÓÒÚÙÍÌÂÊÛÔÎ" + \
-    "0123456789" + "!\"§$%/()[]=?'`*+~'#<>|,.-;:_^°"
-ESCAPABLE_CHARS = "$&()[]"
+    "0123456789" + "!\"§$%&/()[]=?'`*+~'#<>|,.-;:_^°"
 
 CROSSReferences = {}
 IMAGENames = []
@@ -295,9 +288,6 @@ class TexScanner:
                                  re.IGNORECASE)
         self.reKW = re.compile(r"/Keywords \((?P<keywords>.*)\)",
                                re.IGNORECASE)
-        self.reComment = re.compile(r"(?<=[^\\])%.*|\A%.*")
-        self.reDollarMath = re.compile(r"(?<=[^\\])\$|\A\$")
-        self.dollarMathOn = False
 
     def getRawLine(self):
         global DESCRIPTION, KEYWORDS
@@ -342,35 +332,23 @@ class TexScanner:
             if self.eof:
                 break
 
-            s = s.strip() # führende und folgende Leerzeichen eliminieren
             s = s.replace("\t", " ")  # Tabulatoren eliminieren
-            s = self.reComment.sub("", s)
-            
-            def mathRepl(m):
-                self.dollarMathOn = not self.dollarMathOn
-                if self.dollarMathOn:
-                    return r"\("
+
+            i, k = 0, len(s)                     # Führende Leerzeichen weg
+            while (i < k) and (s[i] == " "):
+                i = i + 1
+            s = s[i:]
+
+            if s[:1] == "%":
+                continue           # Kommentarzeilen ignorieren
+            i = s.find("%")             # Kommentare beseitigen
+            while i > 0:
+                if s[i - 1] == "\\":
+                    i = s.find("%", i + 1)
                 else:
-                    return r"\)"
-            s = self.reDollarMath.sub(mathRepl, s)
-            
-            # s = self.reDollarMath.sub(r"\(", s)  # Ersetze $ durch 
-
-            # i, k = 0, len(s)                     # Führende Leerzeichen weg
-            # while (i < k) and (s[i] == " "):
-            #     i = i + 1
-            # s = s[i:]
-
-            # if s[:1] == "%":
-            #     continue           # Kommentarzeilen ignorieren
-            # i = s.find("%")             # Kommentare beseitigen
-            # while i > 0:
-            #     if s[i - 1] == "\\":
-            #         i = s.find("%", i + 1)
-            #     else:
-            #         s = s[:i]
-            #         i = -1
-            # s = re.sub(r"\\\%", "%", s)
+                    s = s[:i]
+                    i = -1
+            s = re.sub(r"\\\%", "%", s)
             # if s.find("%") >= 0: print (s)
 
             while (s[-1:] == "\012") or (s[-1:] == "\015"):
@@ -448,7 +426,6 @@ class TexScanner:
             s = re.sub(r"\\\-", "", s)
             s = re.sub(r"\\\_", "_", s)
             s = re.sub(r"\\\/", "", s)
-            s = s.replace(r"~\\", r" \\")
             if LANG == "de":
                 s = re.sub(r"\"`", '&bdquo;', s)
                 s = re.sub(r"``", '&bdquo;', s)
@@ -504,32 +481,11 @@ class TexScanner:
 
         if self.line[self.pos] == "\\":
             command = "\\"
-            self.pos += 1 
-
-            if self.line[self.pos] == "(":
-                print(self.line)
-                command += self.line[self.pos]
-                self.pos += 1
-                mathEnd = self.line.find(r"\)", self.pos)
-                while mathEnd < 0:
-                    command += self.line[self.pos:]
-                    self.pos = 0
-                    self.line = stripLine(self.getLine())
-                    mathEnd = self.line.find(r"\)")
-                command += self.line[self.pos:mathEnd+2]
-                self.pos = mathEnd + 2
-                print("$-MATH: " + command, self.pos, mathEnd)
-                return command
-            
-            elif self.line[self.pos] in ESCAPABLE_CHARS:
-                command += self.line[self.pos]
-                self.pos += 1
-                return command            
-            
+            self.pos = self.pos + 1
             while (self.pos < len(self.line)) and \
                   (self.line[self.pos] in CHARS):
                 command = command + self.line[self.pos]
-                self.pos += 1
+                self.pos = self.pos + 1
 
                 if self.line[self.pos - 1] == "[":
                     while self.pos < len(self.line) and \
@@ -585,7 +541,6 @@ class HTMLPage:
         self.contents = None
         self.index = None
         self.home = None
-        self.hasFormulars = False
 
         self.head = []
         self.top = []
@@ -691,9 +646,9 @@ class HTMLPage:
 #                 i += len(s2) * 2 + 15
 #         return (s)
 
-#     def activateLinks(self, l):
-#         pass
-#         # print("Automatic Link activation is deprecated!!!")
+    def activateLinks(self, l):
+        pass
+        # print("Automatic Link activation is deprecated!!!")
 #         for i in range(len(l)):
 #             l[i] = self.activateLinksInStr(l[i])
 
@@ -730,6 +685,23 @@ class HTMLPage:
             l[i] = self.crossReferences(l[i])
 
     def postFix(self, page):
+        # page = re.sub("ä|\xe4", "&auml;", page)   # HTML-Umlaute
+        #         page = re.sub("ö|\xf6", "&ouml;", page)
+        #         page = re.sub("ü|\xfc", "&uuml;", page)
+        #         page = re.sub("Ä|\xc4", "&Auml;", page)
+        #         page = re.sub("Ö|\xd6", "&Ouml;", page)
+        #         page = re.sub("Ü|\xdc", "&Uuml;", page)
+        #         page = re.sub("ß|\xdf", "&szlig;", page)
+        #
+        #         page = re.sub("é|\xe9", "&eacute;", page)
+        #         page = re.sub("è|\xe8", "&egrave;", page)
+        #         page = re.sub("á|\xe1", "&aacute;", page)
+        #         page = re.sub("à|\xe0", "&agrave;", page)
+        #         page = re.sub("â|\xe2", "&acirc;", page)
+        #         page = re.sub("ò|\xf2", "&ograve;", page)
+        #         page = re.sub("ó|\xf3", "&oacute;", page)
+        #
+        #         page = re.sub("§|\xa7", "&sect;", page)
         page = page.replace("$bibnode", "node" + str(self.bibpageNr) + ".html")
         return page
 
@@ -769,10 +741,6 @@ class HTMLPage:
 
         pg_head = re.sub(r"\$title", re.sub("\\n|(<.*?>)", " ", self.title),
                          HTMLPageHead)
-        if self.hasFormulars:
-            pg_head = pg_head.replace("$mathjax", MATHJAX)
-        else:
-            pg_head = pg_head.replace("$mathjax\n", "")
 
         prev_pg = ""
         next_pg = ""
@@ -801,7 +769,7 @@ class HTMLPage:
             self.top = [HTMLPageTop] + [mytoplink] + \
                 ['<hr noshade="noshade" />\12']
             self.end = self.link
-            # self.activateLinks(self.body)
+            self.activateLinks(self.body)
 
             bib = []
             if BIBTEX_INFO or CITATION_INFO:
@@ -931,8 +899,8 @@ class HTMLPage:
 
             self.fixReferences(self.body)
             self.fixReferences(self.foot)
-            # self.activateLinks(self.body)
-            # self.activateLinks(self.foot)
+            self.activateLinks(self.body)
+            self.activateLinks(self.foot)
 
             if self.foot != []:
                 page = self.head + self.top + self.body + \
@@ -948,45 +916,36 @@ class HTMLPage:
         return page
 
 
-SECTIONS = [r"\chapter{", r"\section{", r"\subsection{", r"\subsubsection{",
-            r"\paragraph{", r"\subparagraph{"]
+SECTIONS = ["\\chapter{", "\\section{", "\\subsection{", "\\subsubsection{",
+            "\\paragraph{", "\\subparagraph{"]
 
-TermPSequence = SECTIONS + [r"\begin{document}", r"\end{document}",
-                            r"\begin{titlepage}", r"\end{titlepage}",
-                            r"\newpage", r"\maketitle",
-                            r"\begin{thebibliography}"
+TermPSequence = SECTIONS + ["\\begin{document}", "\\end{document}",
+                            "\\begin{titlepage}", "\\end{titlepage}",
+                            "\\newpage", "\\maketitle",
+                            "\\begin{thebibliography}"
                             #"\\end{thebibliography}"
                             ]
 
-TermWSequence = TermPSequence + [r"", r"\footnote{",  # r"\caption{"
-                                 r"\marginline{", r"\multicolumn{",
-                                 r"\raisebox{", r"\cline{",
-                                 r"\begin{enumerate}", r"\end{enumerate}",
-                                 r"\begin{quote}", r"\end{quote}",
-                                 r"\begin{quotation}", r"\end{quotation}",
-                                 r"\begin{enumeration}", r"\end{enumeration}",
-                                 r"\begin{itemize}", r"\end{itemize}",
-                                 r"\begin{description}", r"\end{description}",
-                                 r"\item",  # , r"\bibitem",
-                                 r"\begin{center}", r"\end{center}",
-                                 r"\begin{flushleft}", r"\end{flushleft}",
-                                 r"\begin{flushright}", r"\end{flushright}",
-                                 r"\begin{thebibliography}",
-                                 r"\end{thebibliography}",
-                                 r"\begin{abstract}", r"\end{abstract}",
-                                 r"\begin{figure}", r"\end{figure}",
-                                 r"\begin{verbatim}", r"\end{verbatim}",
-                                 r"\begin{tabular}", r"\end{tabular}",
-                                 r"\begin{equation}", r"\end{equation}",
-                                 r"\begin{equation*}", r"\end{equation*}",
-                                 r"\begin{eqnarray}", r"\end{eqnarray}",
-                                 r"\begin{displaymath}", r"\end{displaymath}",
-                                 r"\[", r"\]" # , r"\(", r"\)"
-                                 ]
+TermWSequence = TermPSequence + ["", "\\footnote{",  # "\\caption{"
+                                 "\\begin{enumerate}", "\\end{enumerate}",
+                                 "\\begin{quote}", "\\end{quote}",
+                                 "\\begin{quotation}", "\\end{quotation}",
+                                 "\\begin{enumeration}", "\\end{enumeration}",
+                                 "\\begin{itemize}", "\\end{itemize}",
+                                 "\\begin{description}", "\\end{description}",
+                                 "\\item",  # , "\\bibitem",
+                                 "\\begin{center}", "\\end{center}",
+                                 "\\begin{flushleft}", "\\end{flushleft}",
+                                 "\\begin{flushright}", "\\end{flushright}",
+                                 "\\begin{thebibliography}",
+                                 "\\end{thebibliography}",
+                                 "\\begin{abstract}", "\\end{abstract}",
+                                 "\\begin{figure}", "\\end{figure}",
+                                 "\\begin{verbatim}", "\\end{verbatim}"]
 
-KnownTokens = [r"\begin{", r"\end{", r"\bibitem{", r"\label{",
-               r"\ref{", r"\pageref{", r"\bibliographystyle{", r"\nocite{",
-               r"\url{", r"\cline{"]
+KnownTokens = ["\\begin{", "\\end{", "\\bibitem{", "\\label{",
+               "\\ref{", "\\pageref{", "\\bibliographystyle{", "\\nocite{",
+               "\\url{"]
 
 
 class ParserError(Exception):
@@ -1013,15 +972,12 @@ class TexParser:
         self.chapterName = ""
         self.footnoteFlag = False
         self.footnoteNr = 0
-        self.tableFlag = False
         self.leadIn = 0
         self.depth = 0
         self.mindepth = 5
         self.citeFlag = False
         self.figureFlag = False
         self.figureNr = 0
-        self.clineStart = 0
-        self.clineEnd = 0
         self.itemEnv = []  # stack for nested itemize, enumerate, description..
 
     def copyImage(self, name):
@@ -1032,9 +988,8 @@ class TexParser:
                 scale = SCALEFactors[name]
             else:
                 scale = 1.0
-            # os.system('pstoimg "../' + name + '" -out "' + out +
-            #           '" -quiet -antialias -aaliastext -scale ' + str(scale))
-            os.system('convert ../' + name + ' ' + os.path.basename(out))
+            os.system('pstoimg "../' + name + '" -out "' + out +
+                      '" -quiet -antialias -aaliastext -scale ' + str(scale))
         else:
             os.system('cp "../' + name + '" ./')
 
@@ -1232,32 +1187,14 @@ class TexParser:
         while (not (self.token in TermWSequence)) and \
                 (not (self.token[1:8] == "bibitem")) and \
                 (not (self.token[1:5] == "item")):
-            if self.token == r"\\" and self.tableFlag:
-                if s != "":
-                    sequence.append(s)
-                    s = ""
-                sequence.extend(['</td>','</tr>\n','<tr>','<td>'])
-            elif self.token == "&" and self.tableFlag:
-                if s != "":
-                    sequence.append(s)
-                    s = ""                
-                sequence.extend(['</td>','<td>'])
-            elif self.token == "\\\\" or self.token == "\\linebreak":
+            if self.token == "\\\\" or self.token == "\\linebreak":
                 s = s + "<br />\12"
             elif self.token[0:2] == "{\\":
                 ft = self.interpretFontType(self.token[2:])
                 s = s + ft[0]
                 stack.append(ft[1])
-            elif self.token[0:2] == r"\(":
-                self.currPage.hasFormulars = True
-                s += '<script type="math/tex">' + \
-                     self.token[2:-2] + '</script>'
             elif self.token[0:1] == "\\":
-                if self.token[1:2] == "$":
-                    s += "$"
-                elif self.token[1:2] == "&":
-                    s += "&amp;"
-                elif self.token[1:] == "title{":
+                if self.token[1:] == "title{":
                     self.token = self.getToken()
                     PROJECT_TITLE = "".join(
                         self.sequenceOfWords()).strip()  # self.readStr()
@@ -1314,15 +1251,6 @@ class TexParser:
                     print("URL: ", link)
                 elif self.token[1:5] == "href":
                     print("HREF: " + self.token)
-                    target = self.token[6:-1]
-                    assert self.getToken() == "{"
-                    text = self.sequenceOfWords()
-                    s += '<a class="external" href="' + target + '">' + \
-                         text + '</a>'
-                elif self.token[1:6] == "cline":
-                    rng = self.token[7:-1].split("-")
-                    print("CLINE: " + str(rng))
-                    self.clineStart, self.clineEnd = rng
                 elif self.token[1:16] == "includegraphics":
                     w = self.getImgWidth(self.token)
                     name = self.readStr()
@@ -1436,13 +1364,13 @@ class TexParser:
                 break
 
             if self.token == "\\begin{center}":
-                palign = ' style="text-align:center"'
+                palign = ' align="center"'
                 self.token = self.getToken()
             elif self.token == "\\begin{flushleft}":
-                palign = ' style="text-align:left"'
+                palign = ' align="left"'
                 self.token = self.getToken()
             elif self.token == "\\begin{flushright}":
-                palign = ' style="text-align:right"'
+                palign = ' align="right"'
                 self.token = self.getToken()
 
             if ptag == 1:
@@ -1474,44 +1402,10 @@ class TexParser:
                 self.leadIn = len(sequence[-2]) + len(sequence[-1])
                 self.token = " "
                 ptag = 0
-
-            if self.token == r"\marginline{":
-                print("marginline ignored: " + self.readStr())
-                # TODO: add support for marginlines
-                self.token = " "
-                ptag = 0
-
-            elif self.token == r"\multicolumn{":
-                columns = int(self.readStr())
-                while self.token != "{":
-                    self.token = self.getToken()
-                alignment = self.readStr()
-                while self.token != "{":
-                    self.token = self.getToken()
-                self.token = self.getToken()
-                content = self.sequenceOfWords()
-                self.token = self.getToken()
-                self.token = " "
-                assert sequence[-1].startswith("<td")
-                sequence[-1] = '<td colspan="' + str(columns) + '">'                
-                sequence.extend(content)                
-                ptag = 0
-
-            elif self.token == r"\raisebox{":
-                offset = self.readStr()
-                while self.token != "{":
-                    self.token = self.getToken()               
-                self.token = self.getToken()
-                content = self.sequenceOfWords()
-                self.token = self.getToken()
-                self.token = " "
-                sequence.extend(content)
-                ptag = 0
-                    
             elif self.token in ["\\begin{quote}", "\\begin{quotation}"]:
-                sequence.append("<blockquote>\12")
+                sequence.append("<BLOCKQUOTE>\12")
             elif self.token in ["\\end{quote}", "\\end{quotation}"]:
-                sequence.append("</blockquote>\12")
+                sequence.append("</BLOCKQUOTE>\12")
 
             elif self.token == "\\begin{enumerate}":
                 if sequence[-1][0:2] == "<p":
@@ -1573,21 +1467,6 @@ class TexParser:
                 sequence.append("\n</p>\n")
                 self.figureFlag = False
 
-            elif self.token == r"\begin{tabular}":
-                self.tableFlag = True
-                while self.token != "}":
-                    self.token = self.getToken()
-                self.token = self.getToken()
-                if sequence[-1][0:2] == "<p":
-                    sequence = sequence[:-1]
-                sequence.extend(['<table' + palign + '>\n','<tr>','<td>'])
-                ptag = 0
-            elif self.token == r"\end{tabular}":
-                sequence.extend(['</td>','</tr>\n', '</table>\n'])
-                self.tableFlag = False
-                self.token = " "
-                ptag = 0
-                
             elif self.token == "\\begin{verbatim}":
                 sequence.append("\n<pre>\n")
                 while 1:
@@ -1657,8 +1536,7 @@ class TexParser:
             elif self.token in ["\\end{center}", "\\end{flushleft}",
                                 "\\end{flushright}"]:
                 palign = ''
-                if sequence[-1].find("</table>") < 0: 
-                    sequence.append("\12</p>\12")
+                sequence.append("\12</p>\12")
             elif self.token == "":
                 if sequence[-1][0:2] == "<p":
                     sequence = sequence[:-1]
@@ -1944,7 +1822,6 @@ else:
         DATE_STR = "Datum"
     scanner = TexScanner(texFileName)
     parser = TexParser(scanner)
-    MATHJAX = MATHJAX.replace("$LOCALE", LANG)
     parser.Parse()
     os.chdir("../")
     if not os.path.exists(basename + ".l2h"):
