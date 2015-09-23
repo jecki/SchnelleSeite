@@ -1032,9 +1032,8 @@ class TexParser:
                 scale = SCALEFactors[name]
             else:
                 scale = 1.0
-            # os.system('pstoimg "../' + name + '" -out "' + out +
-            #           '" -quiet -antialias -aaliastext -scale ' + str(scale))
-            os.system('convert ../' + name + ' ' + os.path.basename(out))
+                os.system('pstoimg "../' + name + '" -quiet -antialias -aaliastext -scale ' + str(scale))
+            #    os.system('convert ../' + name + ' ' + os.path.basename(out))
         else:
             os.system('cp "../' + name + '" ./')
 
