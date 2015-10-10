@@ -53,6 +53,7 @@ BIB_STR = "Bibliographical information"
 BIBTEX_STR = "BibTeX record:"
 CITATION_INFO = ""
 BIBTEX_INFO = ""
+MATHJAX_PATH = "https://cdn.mathjax.org/mathjax/latest"
 
 # Tiefe bis zu der die Kapitelnummerierung angezeigt wird
 CHAPTERNUMBERING_DEPTH = 3
@@ -87,7 +88,7 @@ p.citeinfo { font-family:"Lucida Console", Monaco, monospace;
 
 pre, code { font-size:0.8em; line-height:1.4em; }
 
-p,ul,ol,li,dd,dt,dl, a.bibref {
+p,ul,ol,li,dd,dt,dl, blockquote, a.bibref {
     font-family: "Century SchoolBook URW", Garamond, Georgia, Times, serif;
     letter-spacing: -0.01em; }
 
@@ -95,7 +96,7 @@ a.external {
     font-size: 0.9em;
 }
 
-@media screen and (min-width: 680px) {
+@media screen and (min-width: 680Fpx) {
     p,ul,ol,li,dl,dd,dt, a.internal, a.bibref {
         font-feature-settings: "liga";
     }
@@ -146,11 +147,11 @@ a.internal:active       { color:blue; }
 h1 { font-size:1.6em; line-height:1.3em; }
 h2 { font-size:1.5em; line-height:1.3em; padding-top: 0.5em; }
 h3 { font-size:1.4em; line-height:1.3em; padding-top: 0.5em; }
-h4 { font-size:1.3em; line-height:1.3em; font-weight:bold; 
+h4 { font-size:1.3em; line-height:1.3em; font-weight:bold;
      padding-top: 0.4em; }
-h5 { font-size:1.2em; line-height:1.3em; font-weight:bold; 
+h5 { font-size:1.2em; line-height:1.3em; font-weight:bold;
      padding-top: 0.3em; }
-h6 { font-size:1.1em; line-height:1.3em; font-weight:bold; 
+h6 { font-size:1.1em; line-height:1.3em; font-weight:bold;
      padding-top: 0.2em; }
 
 .share-btn {
@@ -219,7 +220,7 @@ $nextpg
 '''
 
 MATHJAX = '''<script type="text/javascript"
-  src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML&locale=$LOCALE">
+  src="$MATHJAX_PATH/MathJax.js?config=TeX-AMS-MML_HTMLorMML&locale=$LOCALE">
 </script>'''
 
 
@@ -272,6 +273,8 @@ CROSSReferences = {}
 IMAGENames = []
 SCALEFactors = {}
 
+INLINECMDS = [r'{\(', r'{\ldots', r'{"`', r'{\begin' r'{\includegraphics']
+ENTITIES = ['&ldquo;', '&rdquo;']
 
 class ScannerError(Exception):
 
@@ -342,10 +345,10 @@ class TexScanner:
             if self.eof:
                 break
 
-            s = s.strip() # führende und folgende Leerzeichen eliminieren
+            s = s.strip()  # führende und folgende Leerzeichen eliminieren
             s = s.replace("\t", " ")  # Tabulatoren eliminieren
             s = self.reComment.sub("", s)
-            
+
             def mathRepl(m):
                 self.dollarMathOn = not self.dollarMathOn
                 if self.dollarMathOn:
@@ -353,25 +356,6 @@ class TexScanner:
                 else:
                     return r"\)"
             s = self.reDollarMath.sub(mathRepl, s)
-            
-            # s = self.reDollarMath.sub(r"\(", s)  # Ersetze $ durch 
-
-            # i, k = 0, len(s)                     # Führende Leerzeichen weg
-            # while (i < k) and (s[i] == " "):
-            #     i = i + 1
-            # s = s[i:]
-
-            # if s[:1] == "%":
-            #     continue           # Kommentarzeilen ignorieren
-            # i = s.find("%")             # Kommentare beseitigen
-            # while i > 0:
-            #     if s[i - 1] == "\\":
-            #         i = s.find("%", i + 1)
-            #     else:
-            #         s = s[:i]
-            #         i = -1
-            # s = re.sub(r"\\\%", "%", s)
-            # if s.find("%") >= 0: print (s)
 
             while (s[-1:] == "\012") or (s[-1:] == "\015"):
                 s = s[:-1]  # EOL
@@ -383,6 +367,7 @@ class TexScanner:
                 auxname = s[i:k]
                 self.fIndex = self.fIndex + 1
                 self.files.append(open(auxname, "r"))
+                print("Reading File: ", auxname)
                 continue
 
             i = s.find("\\bibliographystyle{")
@@ -459,6 +444,9 @@ class TexScanner:
                 s = re.sub(r"``", '&ldquo;', s)
                 s = re.sub(r"\"'", '&rdquo;', s)
                 s = re.sub(r"''", '&rdquo;', s)
+            # s = s.replace(r"\[", r"\begin{displaymath}")
+            # s = s.replace(r"\]", r"\end{displaymath}")
+            s = s.replace(r"\%", "%")
             s = re.sub(r'""', "", s)
             s = re.sub(r"\\\~{ }", "~", s)
             s = re.sub(r"---", "-", s)
@@ -472,6 +460,12 @@ class TexScanner:
             s = re.sub(r"\\\\i ", "&#305;", s)
             return s
 
+        def chkCmds(commandList):
+            for cmd in commandList:
+                if self.line[self.pos:self.pos + len(cmd)] == cmd:
+                    # assert False, cmd # Debugging
+                    return True        
+        
         # if self.eof: return ""
         if self.eof:
             raise ScannerError("End of File reached")
@@ -502,30 +496,40 @@ class TexScanner:
                 self.pos = self.pos + 1
             return word                 # Token "Buchstabenfolge" = Wort
 
+        if self.line[self.pos] == "&":
+            if chkCmds(ENTITIES):
+                i = self.line.find(";", self.pos) + 1
+                entity = self.line[self.pos:i]
+                self.pos = i
+                return entity
+
         if self.line[self.pos] == "\\":
             command = "\\"
-            self.pos += 1 
+            self.pos += 1
 
-            if self.line[self.pos] == "(":
-                print(self.line)
+            if len(self.line) > self.pos and \
+               (self.line[self.pos] == "(" or self.line[self.pos] == "["):
+                mtype = ")" if self.line[self.pos] == "(" else "]"
                 command += self.line[self.pos]
                 self.pos += 1
-                mathEnd = self.line.find(r"\)", self.pos)
+                mathEnd = self.line.find("\\" + mtype, self.pos)
                 while mathEnd < 0:
                     command += self.line[self.pos:]
+                    if command[-1] != " ":
+                        command += " "
                     self.pos = 0
                     self.line = stripLine(self.getLine())
-                    mathEnd = self.line.find(r"\)")
+                    mathEnd = self.line.find("\\" + mtype)
                 command += self.line[self.pos:mathEnd+2]
                 self.pos = mathEnd + 2
-                print("$-MATH: " + command, self.pos, mathEnd)
                 return command
-            
-            elif self.line[self.pos] in ESCAPABLE_CHARS:
+
+            elif len(self.line) > self.pos and \
+                    self.line[self.pos] in ESCAPABLE_CHARS:
                 command += self.line[self.pos]
                 self.pos += 1
-                return command            
-            
+                return command
+
             while (self.pos < len(self.line)) and \
                   (self.line[self.pos] in CHARS):
                 command = command + self.line[self.pos]
@@ -555,7 +559,11 @@ class TexScanner:
                         self.pos = self.pos + 1
                     self.pos = self.pos + 1
             return command
-
+        
+        if chkCmds(INLINECMDS):
+            self.pos += 1
+            return "{"
+        
         if self.line[self.pos:self.pos + 2] == "{\\":
             command = "{\\"
             self.pos = self.pos + 2
@@ -955,12 +963,13 @@ TermPSequence = SECTIONS + [r"\begin{document}", r"\end{document}",
                             r"\begin{titlepage}", r"\end{titlepage}",
                             r"\newpage", r"\maketitle",
                             r"\begin{thebibliography}"
-                            #"\\end{thebibliography}"
+                            # "\\end{thebibliography}"
                             ]
 
 TermWSequence = TermPSequence + [r"", r"\footnote{",  # r"\caption{"
+                                 r"\parbox{",
                                  r"\marginline{", r"\multicolumn{",
-                                 r"\raisebox{", r"\cline{",
+                                 r"\raisebox{", r"\cline{", r"\mbox{",
                                  r"\begin{enumerate}", r"\end{enumerate}",
                                  r"\begin{quote}", r"\end{quote}",
                                  r"\begin{quotation}", r"\end{quotation}",
@@ -980,8 +989,10 @@ TermWSequence = TermPSequence + [r"", r"\footnote{",  # r"\caption{"
                                  r"\begin{equation}", r"\end{equation}",
                                  r"\begin{equation*}", r"\end{equation*}",
                                  r"\begin{eqnarray}", r"\end{eqnarray}",
+                                 r"\begin{eqnarray*}", r"\end{eqnarray*}",
                                  r"\begin{displaymath}", r"\end{displaymath}",
-                                 r"\[", r"\]" # , r"\(", r"\)"
+                                 r"\begin{displaymath*}", r"\end{displaymath*}",
+                                 # r"\[", r"\]"  # , r"\(", r"\)"
                                  ]
 
 KnownTokens = [r"\begin{", r"\end{", r"\bibitem{", r"\label{",
@@ -1008,6 +1019,7 @@ class TexParser:
         self.pageList = []
         self.bibpageNr = 0
         self.currPage = None
+        self.hasFormulars = False
         self.nodeCount = 0
         self.chapter = [0, 0, 0, 0, 0, 0]
         self.chapterName = ""
@@ -1023,22 +1035,25 @@ class TexParser:
         self.clineStart = 0
         self.clineEnd = 0
         self.itemEnv = []  # stack for nested itemize, enumerate, description..
-
+        self.stack = []
+        
     def copyImage(self, name):
         print("processing: " + name)
+        out = name[:-4] + ".png"
         if CONVERTEPS and name.endswith(".eps"):
-            out = name[:-4] + ".png"
             if name in SCALEFactors:
                 scale = SCALEFactors[name]
             else:
                 scale = 1.0
+            if not os.path.exists('../' + out):
+                # print(os.getcwd(), out)
                 os.system('pstoimg "../' + name + '" -quiet -antialias -aaliastext -scale ' + str(scale))
             #    os.system('convert ../' + name + ' ' + os.path.basename(out))
-        else:
-            os.system('cp "../' + name + '" ./')
+        if not os.path.exists(os.path.basename(out)):
+            os.system('cp "../' + out + '" ./')
 
     def flushPageList(self):
-        global HTMLPageHead, HTMLPageTop
+        global HTMLPageHead, HTMLPageTop, MATHJAX
 
         # nochmal lesen, da eingetragene Werte entscheidend
         if os.path.exists(basename + ".l2h"):
@@ -1060,6 +1075,8 @@ class TexParser:
 
         HTMLPageTop = re.sub(r"\$author", AUTHOR, HTMLPageTop)
         HTMLPageTop = re.sub(r"\$doctitle", PROJECT_TITLE, HTMLPageTop)
+
+        MATHJAX = MATHJAX.replace("$MATHJAX_PATH", MATHJAX_PATH)
 
         lastPage = None
         contentPage = self.pageList[1]
@@ -1223,7 +1240,7 @@ class TexParser:
             self.token = self.getToken()
         return st
 
-    def sequenceOfWords(self):
+    def sequenceOfWords(self, breakOnFontType=False):
         global PROJECT_TITLE, AUTHOR, REFERENCE, DATE
         stack = []
         sequence = []
@@ -1235,22 +1252,31 @@ class TexParser:
                 if s != "":
                     sequence.append(s)
                     s = ""
-                sequence.extend(['</td>','</tr>\n','<tr>','<td>'])
+                sequence.extend(['</td>', '</tr>\n', '<tr>', '<td>'])
             elif self.token == "&" and self.tableFlag:
                 if s != "":
                     sequence.append(s)
-                    s = ""                
-                sequence.extend(['</td>','<td>'])
+                    s = ""
+                sequence.extend(['</td>', '<td>'])
             elif self.token == "\\\\" or self.token == "\\linebreak":
-                s = s + "<br />\12"
+                s = s + " <br />\12"
             elif self.token[0:2] == "{\\":
                 ft = self.interpretFontType(self.token[2:])
                 s = s + ft[0]
                 stack.append(ft[1])
-            elif self.token[0:2] == r"\(":
-                self.currPage.hasFormulars = True
-                s += '<script type="math/tex">' + \
-                     self.token[2:-2] + '</script>'
+            elif self.token[0:2] == r"\(" or self.token[0:2] == r"\[":
+                if self.token[0:2] == r"\[":
+                    leadin = "\n<br /><br />"
+                    leadout = "<br /><br />\n"
+                else:
+                    leadin = ""
+                    leadout = ""
+                if self.currPage:
+                    self.currPage.hasFormulars = True
+                else:
+                    self.hasFormulars = True
+                s += leadin + '<script type="math/tex">' + \
+                     self.token[2:-2] + '</script>' + leadout
             elif self.token[0:1] == "\\":
                 if self.token[1:2] == "$":
                     s += "$"
@@ -1314,13 +1340,13 @@ class TexParser:
                 elif self.token[1:5] == "href":
                     print("HREF: " + self.token)
                     target = self.token[6:-1]
-                    assert self.getToken() == "{"
-                    text = self.sequenceOfWords()
+                    self.token = self.getToken()
+                    text = "".join(self.sequenceOfWords())
                     s += '<a class="external" href="' + target + '">' + \
                          text + '</a>'
                 elif self.token[1:6] == "cline":
                     rng = self.token[7:-1].split("-")
-                    print("CLINE: " + str(rng))
+                    # print("CLINE: " + str(rng))
                     self.clineStart, self.clineEnd = rng
                 elif self.token[1:16] == "includegraphics":
                     w = self.getImgWidth(self.token)
@@ -1384,7 +1410,6 @@ class TexParser:
                     else:
                         s += "\n<br /><b>Abstract:</b>\n"
                 elif self.token[-1] == "{":
-                    # print(">>>>>>>" + self.token)
                     ft = self.interpretFontType(self.token[1:-1])
                     s = s + ft[0]
                     stack.append(ft[1])
@@ -1399,6 +1424,8 @@ class TexParser:
                 if len(stack) > 0:
                     s = s + stack[-1]
                     stack = stack[:-1]
+                    if breakOnFontType:
+                        break
                 else:
                     break
             else:
@@ -1411,47 +1438,103 @@ class TexParser:
                 sequence.append(s + " \12")
                 s = ""
                 self.leadIn = 0
-
+                
+        if len(stack) > 0:
+            self.stack = stack        
         if s != "":
             sequence.append(s)
         return sequence
 
     def isP(self, sequence):
         i = len(sequence) - 1
-        while i > 0 and sequence[i][0:2] != "<p" and sequence[i][0:3] != "<li":
+        while i > 0 and sequence[i][0:2] != "<p" and sequence[i][0:3] != "<li" \
+                and sequence[i][0:3] != "<dt" and sequence[i][0:3] != "<dd" \
+                and sequence[i].find("<table") < 0 and sequence[i].find("<div") < 0 \
+                and sequence[i].find("</p") < 0:
             i -= 1
         return i > 0 and sequence[i][0:2] == "<p"
 
+    def eliminateOpenP(self, sequence):
+        i = 1
+        hasText = False
+        while len(sequence) >= i and sequence[-i].find("<p") < 0 \
+                and sequence[-i].find("</p>") < 0:
+            hasText = hasText or re.sub('<[^>]*>', '', sequence[-i].strip())
+            i += 1
+        if len(sequence) >= i and sequence[-i].find("<p") >= 0:
+            if not hasText:
+                del sequence[-i]
+            else:
+                sequence.append("\n</p>\n")
+
+    def passBracesBlock(self):
+        content = []
+        if self.token.endswith("}"):
+            self.token = self.getToken()
+        if self.token == "{":
+            self.token = self.getToken()
+            
+        openBraces = 1
+        while openBraces > 0:
+            content.append(self.token)
+            self.token = self.getToken()
+            if self.token == "{":
+                openBraces += 1
+            elif self.token == "}":
+                openBraces -= 1
+
+        ret = "".join(content)
+        return ret
+
+    def checkAlignment(self, alignment):
+        if self.token == "\\begin{center}":
+            palign = ' style="text-align:center"'
+        elif self.token == "\\begin{flushleft}":
+            palign =  ' style="text-align:left"'
+        elif self.token == "\\begin{flushright}":
+            palign = ' style="text-align:right"'
+        else:
+            palign = ''
+        if palign != '':
+            self.token = self.getToken()
+            return palign
+        else:
+            return alignment
+
     def sequenceOfParagraphs(self, pclass='', palign='', pretext="",
-                             preambel=[]):
+                             preambel=[], div=False):
         sequence = preambel.copy()
         ptag = 1
+        stack = []
         while 1:
             if ptag == 1:
                 while self.token == "":
                     self.token = self.getToken()
 
             if (self.token in (TermPSequence + ["}"])):
-                break
+                if self.token == "}" and len(stack) > 0:
+                    # assert False, str(sequence[-2:])
+                    sequence.append(self.stack.pop())
+                    self.token = self.getToken()
+                    ptag = 0
+                else:
+                    break
 
-            if self.token == "\\begin{center}":
-                palign = ' style="text-align:center"'
-                self.token = self.getToken()
-            elif self.token == "\\begin{flushleft}":
-                palign = ' style="text-align:left"'
-                self.token = self.getToken()
-            elif self.token == "\\begin{flushright}":
-                palign = ' style="text-align:right"'
-                self.token = self.getToken()
-
-            if ptag == 1:
-                sequence.append("<p" + pclass + palign + ">\12" + pretext)
+            palign = self.checkAlignment(palign)
+            
+            if ptag == 1 and not self.tableFlag and \
+                    not self.token.startswith(r"\end{"):
+                self.eliminateOpenP(sequence)
+                popen = "<div" if div else "<p"
+                sequence.append(popen + pclass + palign + ">\12" + pretext)
                 pretext = ""
                 self.leadIn = 0
+                div = False
             else:
                 ptag = 1
 
             sequence = sequence + self.sequenceOfWords()
+            palign = self.checkAlignment(palign)
 
             if self.token == "\\footnote{":
                 self.footnoteNr = self.footnoteNr + 1
@@ -1468,15 +1551,43 @@ class TexParser:
                         ' class="footnote"', "", '<a id="' + fnr +
                         '" class="internal fn" href="#' + refnr + '">[' +
                         str(self.footnoteNr) + ']</a> ')
+                stack = self.stack
                 self.currPage.foot.append("\12</p>\12")
                 self.footnoteFlag = False
                 self.leadIn = len(sequence[-2]) + len(sequence[-1])
                 self.token = " "
                 ptag = 0
 
+            if self.token == r"\parbox{":
+                # widthS = self.getToken()
+                while self.token[0:1] != "{":
+                    self.token = self.getToken()
+                if self.token == "{":
+                    self.token = self.getToken()
+                else:
+                    self.token = self.token[1:]
+                    if self.token.startswith(r"\begin"):
+                        while self.token[-1] != "}":
+                            self.token += self.getToken()
+                    elif self.token.startswith(r"\includegraphics"):
+                        while self.token[-1] != "{":
+                            self.token += self.getToken()
+
+                # if len(sequence) >= 0 and sequence[-1][:2] == "<p":
+                #     sequence.pop()
+                self.eliminateOpenP(sequence)
+                content = self.sequenceOfParagraphs(' class="parbox"', div=True)
+                sequence.extend(content)
+                if sequence[-1].find("</p>") >= 0:
+                    sequence.pop()
+                sequence.append("\n</div>\n")
+                self.token = " "
+                ptag = 0
+
             if self.token == r"\marginline{":
                 print("marginline ignored: " + self.readStr())
                 # TODO: add support for marginlines
+                sequence.append(" ") # leads to unnecessary spaces in front of full stops.
                 self.token = " "
                 ptag = 0
 
@@ -1485,36 +1596,51 @@ class TexParser:
                 while self.token != "{":
                     self.token = self.getToken()
                 alignment = self.readStr()
-                while self.token != "{":
+                while self.token[0:1] != "{":
                     self.token = self.getToken()
-                self.token = self.getToken()
-                content = self.sequenceOfWords()
+                if len(self.token) == 1:
+                    self.token = self.getToken()
+                    content = self.sequenceOfWords()
+                else:
+                    content = self.sequenceOfWords(breakOnFontType=True)
                 self.token = self.getToken()
                 self.token = " "
-                assert sequence[-1].startswith("<td")
-                sequence[-1] = '<td colspan="' + str(columns) + '">'                
-                sequence.extend(content)                
+                # assert sequence[-1].startswith("<td")
+                sequence[-1] = '<td colspan="' + str(columns) + '">'
+                sequence.extend(content)
                 ptag = 0
 
             elif self.token == r"\raisebox{":
                 offset = self.readStr()
-                while self.token != "{":
-                    self.token = self.getToken()               
-                self.token = self.getToken()
-                content = self.sequenceOfWords()
+                while self.token[0:1] != "{":
+                    self.token = self.getToken()
+                if len(self.token) == 1:
+                    self.token = self.getToken()
+                    content = self.sequenceOfWords()
+                else:
+                    content = self.sequenceOfWords(breakOnFontType=True)
                 self.token = self.getToken()
                 self.token = " "
                 sequence.extend(content)
                 ptag = 0
-                    
-            elif self.token in ["\\begin{quote}", "\\begin{quotation}"]:
-                sequence.append("<blockquote>\12")
-            elif self.token in ["\\end{quote}", "\\end{quotation}"]:
-                sequence.append("</blockquote>\12")
 
+            elif self.token == r"\mbox{":
+                self.token = self.getToken()
+                content = self.sequenceOfWords()
+                self.token = self.getToken()
+                sequence.extend(content)
+                ptag = 0
+                
+            elif self.token in ["\\begin{quote}", "\\begin{quotation}"]:
+                self.eliminateOpenP(sequence)
+                sequence.extend(["<blockquote>\12"])
+                ptag = 0
+                
+            elif self.token in ["\\end{quote}", "\\end{quotation}"]:
+                sequence.extend(["</blockquote>\12"])
+                
             elif self.token == "\\begin{enumerate}":
-                if sequence[-1][0:2] == "<p":
-                    sequence = sequence[:-1]
+                self.eliminateOpenP(sequence)
                 sequence.append("<ol>\12")
                 self.itemEnv.append("ol")
                 ptag = 0
@@ -1523,13 +1649,12 @@ class TexParser:
                         (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 if self.isP(sequence):
-                    sequence.append("</p>")
+                    sequence.append("\n</p>\n")
                 sequence.append("</li>\12</ol>\12")
                 self.itemEnv.pop()
 
             elif self.token == "\\begin{itemize}":
-                if sequence[-1][0:2] == "<p":
-                    sequence = sequence[:-1]
+                self.eliminateOpenP(sequence)
                 sequence.append("<ul>\12")
                 self.itemEnv.append("ul")
                 ptag = 0
@@ -1538,7 +1663,7 @@ class TexParser:
                         (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 if self.isP(sequence):
-                    sequence.append("</p>")
+                    sequence.append("\n</p>\n")
                 sequence.append("</li>\12</ul>\12")
                 self.itemEnv.pop()
 
@@ -1553,7 +1678,7 @@ class TexParser:
                         (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 if self.isP(sequence):
-                    sequence.append("</p>")
+                    sequence.append("\n</p>\n")
                 sequence.append("</dd>\12</dl>\12")
                 self.itemEnv.pop()
 
@@ -1569,24 +1694,25 @@ class TexParser:
                         (sequence[-1][0:2] == "<p"):
                     sequence = sequence[:-1]
                 pclass = ''
-                sequence.append("\n</p>\n")
+                if self.isP(sequence):
+                    sequence.append("\n</p>\n")
                 self.figureFlag = False
 
             elif self.token == r"\begin{tabular}":
                 self.tableFlag = True
-                while self.token != "}":
-                    self.token = self.getToken()
+                self.passBracesBlock()
                 self.token = self.getToken()
-                if sequence[-1][0:2] == "<p":
-                    sequence = sequence[:-1]
-                sequence.extend(['<table' + palign + '>\n','<tr>','<td>'])
+                # if len(sequence) > 0 and sequence[-1][0:2] == "<p":
+                #     sequence = sequence[:-1]
+                self.eliminateOpenP(sequence)
+                sequence.extend(['<table' + palign + '>\n', '<tr>', '<td>'])
                 ptag = 0
             elif self.token == r"\end{tabular}":
-                sequence.extend(['</td>','</tr>\n', '</table>\n'])
+                sequence.extend(['</td>', '</tr>\n', '</table>\n'])
                 self.tableFlag = False
                 self.token = " "
-                ptag = 0
-                
+                ptag = 1
+
             elif self.token == "\\begin{verbatim}":
                 sequence.append("\n<pre>\n")
                 while 1:
@@ -1596,6 +1722,30 @@ class TexParser:
                     else:
                         sequence.append(line)
                 sequence.append("\n</pre>\n")
+
+            elif self.token in [r"\begin{eqnarray}",
+                                r"\begin{eqnarray*}",
+                                r"\begin{equation}",
+                                r"\begin{equation*}",
+                                r"\begin{displaymath}",
+                                r"\begin{displaymath*}"]:
+                endToken = self.token.replace("begin", "end")
+                if endToken.find("eqnarray") >= 0:
+                    sequence.append('\n<br /><br />')
+                sequence.append('<script type="math/tex">\n')
+                beginToken = self.token.replace("displaymath", "eqnarray") 
+                sequence.append(beginToken)
+                while 1:
+                    line = self.scanner.getRawLine()
+                    if line.find(endToken) >= 0:
+                        break
+                    else:
+                        sequence.append(line)
+                endToken = endToken.replace("displaymath", "eqnarray")
+                sequence.append(endToken)
+                sequence.append("\n</script>\n")
+                if beginToken.find("eqnarray") >= 0:
+                    sequence.append("<br />")                
 
             elif self.token == "\\begin{abstract}":
                 if LANG == "de":
@@ -1628,9 +1778,15 @@ class TexParser:
                                sequence[-i][0:3] == "<dt"):
                         i += 1
                     if sequence[-i].startswith("<dt"):
-                        sequence.append("<br />&#160;</dd>\12\12")
+                        if self.isP(sequence):
+                            sequence.append("</p>&#160;</dd>\12\12")
+                        else:
+                            sequence.append("<br />&#160;</dd>\12\12")
                     elif sequence[-i].startswith("<li"):
-                        sequence.append("<br />&#160;</li>\12\12")
+                        if self.isP(sequence):
+                            sequence.append("</p>&#160;</li>\12\12")
+                        else:
+                            sequence.append("<br />&#160;</li>\12\12")
 
                 if self.citeFlag and self.token[1:8] == "bibitem":
                     i = 9
@@ -1656,23 +1812,28 @@ class TexParser:
             elif self.token in ["\\end{center}", "\\end{flushleft}",
                                 "\\end{flushright}"]:
                 palign = ''
-                if sequence[-1].find("</table>") < 0: 
-                    sequence.append("\12</p>\12")
+                if self.isP(sequence):
+                    sequence.append("\n</p>\n")
+                    # ptag = 0
             elif self.token == "":
                 if sequence[-1][0:2] == "<p":
                     sequence = sequence[:-1]
                 else:
                     i = len(sequence) - 1
+                    div = 0
                     while i >= 0 and sequence[i].find("<li") < 0 \
                             and sequence[i].find("<dd") < 0 \
-                            and sequence[i].find("<p") < 0:
+                            and sequence[i].find("<p") < 0 \
+                            and sequence[i].find("</p>") < 0:
                         i -= 1
-                    if sequence[i].find("<li") < 0 and \
-                            sequence[i].find("<dd") < 0:
-                        sequence.append("\12</p>\12")
+                    if sequence[i].find("<li") < 0 \
+                            and sequence[i].find("<dd") < 0 \
+                            and sequence[i].find("</p>") < 0:
+                        if self.isP(sequence):
+                            sequence.append("\n</p>\n")
                     else:
                         sequence.append("\12")
-
+                        
             if not (self.token in (TermPSequence + ["}"])):
                 self.token = self.getToken()
                 while self.token == " ":
@@ -1752,6 +1913,7 @@ class TexParser:
                 self.token = self.getToken()
                 self.currPage = HTMLPage(DESTINATION_NAME + ENDING,
                                          PROJECT_TITLE, "TitlePage")
+                self.currPage.hasFormulars = self.hasFormulars
                 self.mainContent()
                 if self.token != "\\end{titlepage}":
                     raise ParserError("\\end{titlepage} expected")
@@ -1763,6 +1925,7 @@ class TexParser:
             elif self.token == "\\maketitle":
                 self.currPage = HTMLPage(DESTINATION_NAME + ENDING,
                                          PROJECT_TITLE, "TitlePage")
+                self.currPage.hasFormulars = self.hasFormulars
                 self.currPage.body.append('<br /><p align="center"><big>' +
                                           PROJECT_TITLE +
                                           '</big></p><br /><br />')
@@ -1913,7 +2076,7 @@ while n < len(sys.argv):
 
 # debugging: texFileName = "Kritik.tex"
 if texFileName[-4:].lower() != ".tex":
-    print ('''
+    print('''
     Usage:
       latex2html.py [OPTION] texfile
 
@@ -1966,6 +2129,7 @@ else:
             f.write('BIB_STR = "%s"\n' % esc(BIB_STR))
             f.write('CITE_STR = "%s"\n' % esc(CITE_STR))
             f.write('BIBTEX_STR = "%s"\n' % esc(BIBTEX_STR))
+            f.write('MATHJAX_PATH = "%s"\n' % esc(MATHJAX_PATH))
             f.write('CITATION_INFO = """' + CITATION_INFO + '"""\n')
             f.write('BIBTEX_INFO = """' + BIBTEX_INFO + '"""\n')
             f.write('METADATA_BLOB = """' + METADATA_BLOB + '"""\n')
