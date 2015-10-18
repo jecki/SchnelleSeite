@@ -293,7 +293,7 @@ try:
         """Preprocesses less stylesheet with less.js (http://lesscss.org/) at
         location src and writes the result to 'dst'.
         """
-        css = subprocess.check_output(["lessc", "-x", src])
+        css = subprocess.check_output(["lessc", "", src])
         with open(os.path.splitext(dst)[0] + '.css', "wb") as css_file:
             css_file.write(css)
 

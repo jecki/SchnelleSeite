@@ -1,6 +1,9 @@
 #! /usr/bin/python3
 # -*- encoding: utf-8 -*-
 
+# TODO: implement {\em scriptsize}
+# TODO: tabular borders
+
 """latex2html.py - Converts LaTeX documents into HTML documents.
 
 Copyright 2001-2015  by Eckhart Arnold
