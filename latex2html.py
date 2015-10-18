@@ -99,7 +99,7 @@ a.external {
     font-size: 0.9em;
 }
 
-@media screen and (min-width: 680Fpx) {
+@media screen and (min-width: 680px) {
     p,ul,ol,li,dl,dd,dt, a.internal, a.bibref {
         font-feature-settings: "liga";
     }
