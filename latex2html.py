@@ -1002,6 +1002,8 @@ KnownTokens = [r"\begin{", r"\end{", r"\bibitem{", r"\label{",
                r"\ref{", r"\pageref{", r"\bibliographystyle{", r"\nocite{",
                r"\url{", r"\cline{"]
 
+FontMarkers = ["em", "bf", "it", "tt", "small", "tiny", "scriptsize",
+               "footnotesize", "normalsize", "large", "Large", "Huge", "high"]
 
 class ParserError(Exception):
 
@@ -1195,8 +1197,8 @@ class TexParser:
                 s[i - 1] = "/"
             if s[i - 1] == " " or s[i - 1] == "," or s[i - 1] == "/":
                 s[i] = s[i].upper()
-        if ("".join(s)) == "Arnold2006":
-            print("HERE: " + str(s))
+        # if ("".join(s)) == "Arnold2006":
+        #     print("HERE: " + str(s))
         return "".join(s).replace("-et-al", " et al.")
 
     def targetFromBibKey(self, key):
@@ -1462,6 +1464,8 @@ class TexParser:
         hasText = False
         while len(sequence) >= i and sequence[-i].find("<p") < 0 \
                 and sequence[-i].find("</p>") < 0:
+            # if sequence[-i].find("<small>") >= 0:
+            #     print(">>>> " + str(sequence[-i-2:-i+2]))
             hasText = hasText or re.sub('<[^>]*>', '', sequence[-i].strip())
             i += 1
         if len(sequence) >= i and sequence[-i].find("<p") >= 0:
@@ -1469,7 +1473,7 @@ class TexParser:
                 del sequence[-i]
             else:
                 sequence.append("\n</p>\n")
-
+                
     def passBracesBlock(self):
         content = []
         if self.token.endswith("}"):
@@ -1833,7 +1837,9 @@ class TexParser:
                             and sequence[i].find("<dd") < 0 \
                             and sequence[i].find("</p>") < 0:
                         if self.isP(sequence):
-                            sequence.append("\n</p>\n")
+                            if re.sub('<|>', '', sequence[-1].strip()) \
+                               not in FontMarkers:
+                                sequence.append("\n</p>\n")
                     else:
                         sequence.append("\12")
                         
