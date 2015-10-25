@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 """bibloader.py - A loader for bibtex bibliography databases
 
 
@@ -198,7 +200,7 @@ def bib_strings(entry, lang):
                 .format(**entry_dict)
         else:
             bib_full = "{Author}: {Title}, {Publisher} " \
-                "{Address} {Year}.".format(**entry)
+                "{Address} {Year}.".format(**entry_dict)
             bib_short = "{Publisher} {Address} {Year}." \
                 .format(**entry_dict)
 

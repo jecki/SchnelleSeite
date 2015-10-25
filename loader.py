@@ -80,9 +80,9 @@ def is_completing_loader(loader_func):
 def markdown_loader(text, metadata):
     """A loader function for markdown."""
     # TODO: Remove debug code here
-#     if metadata['basename'] == "How_Models_Fail":
-#         print(text)
-#         print(markdown.markdown(text))
+    # if metadata['basename'] == "DH_Materials":
+    #     print(text)
+    #     print(markdown.markdown(text))
     return markdown.markdown(text)
 
 
