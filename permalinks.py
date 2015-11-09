@@ -26,6 +26,7 @@ from utility import segment_data, matching_segment_range, RX_HTML_COMMENTS, \
 RX_PERMALINK_CLASS = re.compile('class *?= *?["\']permalink["\']',
                                 re.IGNORECASE)
 RX_TAG = re.compile("<.*?>", re.DOTALL)
+RX_ENTITIES = re.compile("&.*?;", re.DOTALL)
 PERMALINK_TEMPLATE = '&nbsp;&nbsp;<a class="permalink" href="#{target}"' \
                      ' title="{tooltip}">{sign}</a>'
 
@@ -63,15 +64,16 @@ def permalinks(html, args, metadata):
         if RX_PERMALINK_CLASS.search(heading):
             print("Warning, permanent link already exists in: " + heading)
             return True
-        if heading[-9:-5].lower() == "</a>":
+        if heading[-9:-5].lower() == "</a>" and \
+                "id" in get_attributes(heading, 0):
             print("Remark, maybe %s already has a permalink?" % heading)
         return False
 
     def gen_id(heading):
         start = heading.find(">") + 1
         end = heading.rfind("<")
-        text = RX_TAG.sub("", heading[start:end])
-        return re.sub(r"\W", "-", text)
+        text = RX_ENTITIES.sub("", RX_TAG.sub("", heading[start:end]))
+        return re.sub(r"\W", " ", text).strip().replace(" ", "-")
 
     headings = parse_args(args)
     hstr = "".join([str(h) for h in headings])
