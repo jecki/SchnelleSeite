@@ -33,19 +33,71 @@ SILENT_PERMALINK = '<a class="silent_permalink" href="#{target}" ' \
         'title="{tooltip}">'
 
 
-def permalinks(html, args, metadata):
-    """Add permalinks to the headings specified by 'args' in 'html'.
-    The
-    permalinks are marked by metadata["permalink_sign"] (fallback: &infin;)
+def visible_permalink(heading, target, metadata):
+    """Adds a visible link at the end of heading to target.  The
+    (perma-)link is marked by metadata["permalink_sign"] (fallback: &infin;)
     which appears at the end of the heading separated by two spaces.
     Depending on the stylsheet it can be made to appear only when hovering
-    over the heading.
+    over the heading. CSS class 'visible_permalink'.
+
+    Args:
+        heading (string): The heading as HTML snippet, e.g. "<h1>Heading</h1>"
+        target (string): The targent of the permalink. Usually this is the
+             same as the id-attribute of the heading.
+        metadata (dictionary): The metadata of the current page. If the key
+             "permalink_sign" is present, then it's value is taken as the
+             permalink marker, otherwise "&infin;" serves as the default.
+    
+    Returns:
+        string. The heading as HTML snippet with the (perma-)link added.
+    """
+    tp = translate("permalink", metadata)
+    pmsign = metadata.get("permalink_sign", "&infin;")
+    pos = heading.rfind("<")
+    link = VISIBLE_PERMALINK.format(target=target,
+                                    tooltip=tp, sign=pmsign)
+    return heading[:pos] + link + heading[pos:]
+
+
+def silent_permalink(heading, target, metadata):
+    """Puts a 'silent permalink' under a head, i.e. a link that covers the
+    complete heading, but does not have a particular sign.
+
+    Args:
+        heading (string): The heading as HTML snippet, e.g. "<h1>Heading</h1>"
+        target (string): The targent of the permalink. Usually this is the
+             same as the id-attribute of the heading.
+        metadata (dictionary): The metadata of the current page. 
+    
+    Returns:
+        string. The heading as HTML snippet with the (perma-)link added.    
+    """
+    tp = translate("permalink", metadata)
+    start = heading.find(">") + 1
+    end = heading.rfind("<")
+    # special case treatment in case the heading alread contains some a tags
+    atag = heading.find("<a")
+    if atag > start:
+        end = atag
+    else:
+        atag = heading.find("</a>") + 4
+        assert atag < end, "no room for silent permalink here:" + heading
+        
+    link = SILENT_PERMALINK.format(target=target, tooltip=tp)
+    return heading[:start] + link + heading[start:end] + '</a>' + heading[end:]
+
+
+def permalinks(html, args, metadata):
+    """Add permalinks to the headings specified by 'args' in 'html'.
 
     Args:
         html (string): The web page to which permalinks shall be added.
         args (string): Range of headings to which the permalinks shall be
             added, e.g. "H1-H3" or "H1, H3-H5"
         metadata(dictionary): The metadata dictionary for the current page.
+            the keys 'permalink_type' and 'permalink_sign' will be
+            interpreted if present. 'permalink_type' must be the name
+            of a function (heading, target, metadata) -> heading with permalink
 
     Returns:
         string. The same web page with permalinks added.
@@ -95,12 +147,9 @@ def permalinks(html, args, metadata):
                 if "id" not in attributes:
                     attributes['id'] = gen_id(parts[i])
                 parts[i] = set_attributes(parts[i], 0, attributes)
-                tp = translate("permalink", metadata)
-                pmsign = metadata.get("permalink_sign", "&infin;")
-                pos = parts[i].rfind("<")
-                link = VISIBLE_PERMALINK.format(target=attributes['id'],
-                                                tooltip=tp, sign=pmsign)
-                parts[i] = parts[i][:pos] + link + parts[i][pos:]
+                pm_func = eval(metadata.get("permalink_type",
+                                            "visible_permalink"))
+                parts[i] = pm_func(parts[i], attributes['id'], metadata)
         return "".join(parts)
 
     segments = segment_data(html, RX_HTML_COMMENTS)
