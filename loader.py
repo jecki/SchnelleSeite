@@ -21,6 +21,7 @@ import csv
 import functools
 import inspect
 import io
+import importlib
 import json
 import os
 import sys
@@ -119,7 +120,8 @@ def python_loader(text, metadata):
     cwd = os.getcwd()
     if cwd not in sys.path:
         sys.path.append(cwd)
-    exec("import " + metadata['basename'])
+    globals()[metadata['basename']] = importlib.import_module(
+            metadata['basename'])
 
 
 class RedundantTransTable(Exception):
@@ -254,7 +256,9 @@ def gather_postprocessors(metadata):
             post_processors[key] = value
         else:
             module = value.split('.')[0]
-            exec("import " + module + "; post_processors[key] = " + value)
+            # exec("import " + module + "; post_processors[key] = " + value,
+            #      globals(), locals())
+            post_processors[key] = eval(value, globals(), locals())
             metadata['POSTPROCESSOR_' + key] = post_processors[key]
     post_processor_list += [key for key in POSTPROCESSORS if key in metadata]
 

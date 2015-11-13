@@ -27,12 +27,19 @@ RX_PERMALINK_CLASS = re.compile('class *?= *?["\']permalink["\']',
                                 re.IGNORECASE)
 RX_TAG = re.compile("<.*?>", re.DOTALL)
 RX_ENTITIES = re.compile("&.*?;", re.DOTALL)
-PERMALINK_TEMPLATE = '&nbsp;&nbsp;<a class="permalink" href="#{target}"' \
-                     ' title="{tooltip}">{sign}</a>'
+VISIBLE_PERMALINK = '&nbsp;&nbsp;<a class="visible_permalink" ' \
+        'href="#{target}" title="{tooltip}">{sign}</a>'
+SILENT_PERMALINK = '<a class="silent_permalink" href="#{target}" ' \
+        'title="{tooltip}">'
 
 
 def permalinks(html, args, metadata):
     """Add permalinks to the headings specified by 'args' in 'html'.
+    The
+    permalinks are marked by metadata["permalink_sign"] (fallback: &infin;)
+    which appears at the end of the heading separated by two spaces.
+    Depending on the stylsheet it can be made to appear only when hovering
+    over the heading.
 
     Args:
         html (string): The web page to which permalinks shall be added.
@@ -91,8 +98,8 @@ def permalinks(html, args, metadata):
                 tp = translate("permalink", metadata)
                 pmsign = metadata.get("permalink_sign", "&infin;")
                 pos = parts[i].rfind("<")
-                link = PERMALINK_TEMPLATE.format(target=attributes['id'],
-                                                 tooltip=tp, sign=pmsign)
+                link = VISIBLE_PERMALINK.format(target=attributes['id'],
+                                                tooltip=tp, sign=pmsign)
                 parts[i] = parts[i][:pos] + link + parts[i][pos:]
         return "".join(parts)
 
