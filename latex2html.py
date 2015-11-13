@@ -114,7 +114,13 @@ a.external {
 p,ul,ol,li,dl,dd,dt, a.internal { color: #303030; }
 a.bibref { color: #202070; }
 
-p, li, dd, dt   {  hyphens: auto; color:#303030; }
+p, li, dd, dt   {
+    hyphens: auto;
+    -moz-hyphens: auto;
+    -ms-hyphens: auto;
+    -webkit-hyphens: auto;
+    color:#303030;
+}
 
 
 /* ol.bibliography { font-size:0.8em; line-height:0.9em; } */
