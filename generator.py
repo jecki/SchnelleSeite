@@ -82,7 +82,7 @@ def scan_directory(path, loaders, injected_metadata={}, organizers=[],
     """Reads all files in the directory path for which a loader is given
     for at least the last extension.
 
-    If a file a several extensions, e.g. "example.markdown.jinja2" then the
+    If a file has several extensions, e.g. "example.markdown.jinja2" then the
     loaders are applied subsequently. In case no loader exists in the loaders
     dictionary for the last extension (e.g. ".jinja2") the file is ignored
     completely and not read from the disk at all.
@@ -343,6 +343,12 @@ def create_site(root, site_path,
             (root, current_content) -> content that can manipulate content
             (like replace special tokens or keywords like "STATIC") just before
             writing them to the disk.
+        preprocessors(dicstionary): A dictionary of external preprocessors 
+            (file extension -> preprocessor) that preprocesses files before
+            writing them. Other than writers, preprocessors work directly on
+            the files rather than on the data, loaded into memory. Usually a
+            preprocessor function is merely a stub that calls an external
+            programm.
     """
     assert isinstance(root, sitetree.Folder)
 

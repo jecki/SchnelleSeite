@@ -5,3 +5,7 @@ __pycache__
 *~
 .settings
 /tmp/
+/nbproject/private/
+/nbproject/
+/nbproject
+nbproject
