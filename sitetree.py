@@ -152,7 +152,7 @@ class StaticEntry:
         self.entrypath = os.path.abspath(entryname)
         self.isdir = os.path.isdir(entryname)
 
-    # TODO: Probably, Symlinking would even be better!!
+    # TODO: Maybe, Symlinking would even be better!!
     def copy_entry(self, dst_path="", preprocessors={}):
         """Copies the entry to the build path of the site.
         Arguments:

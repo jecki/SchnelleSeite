@@ -88,9 +88,9 @@ def jinja2_fragments(env, directory, orderby=None):
     """Returns a list of pathnames pathnames (starting from directory) of all
     fragments in a directory.
     Parameters:
-        directory(string): The directory from the the fragments shall be taken.
+        directory(string): The directory from which the fragments shall be taken.
         orderby(string): A metadata parameter which determines the order of
-            the fragments. Instead of supplying this function with this
+            the fragments. Instead of supplying a function for this
             parameter it may also be set in the metadata of the template
             or in the "__config" file of the fragments directory. The orderby
             parameter in the template metadata (if present) overrides the same
