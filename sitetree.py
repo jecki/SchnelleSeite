@@ -166,13 +166,13 @@ class StaticEntry:
               javascript files or compile less stylsheets to css stylesheets.
         """
         if self.isdir:
-            copytree_on_condition(self.entrypath,
-                                  os.path.join(dst_path, self.entryname),
-                                  is_newer, preprocessors)
+            return copytree_on_condition(self.entrypath, os.path.join(
+                                         dst_path, self.entryname),
+                                         is_newer, preprocessors)
         else:
-            copy_on_condition(self.entrypath,
-                              os.path.join(dst_path, self.entryname),
-                              is_newer, preprocessors)
+            return copy_on_condition(self.entrypath,
+                                     os.path.join(dst_path, self.entryname),
+                                     is_newer, preprocessors)
 
 
 class Folder(collections.OrderedDict):

@@ -93,29 +93,52 @@ def copy_on_condition(src, dst, cond, preprocessors={}):
     is given for the extentions of the file, the preprocessor function is
     called with the source and destination name instead of the system's
     copy function.
+    returns the destination path name (which may have been changed by
+    a 'preprocessor').
+    Returns a sitemap entry (dict).
     """
+    def sitemap_entry(src, dst):
+        return {"loc": dst}
+
     if cond(src, dst):
         ext = os.path.splitext(src)[1]
         if ext in preprocessors:
-            preprocessors[ext](src, dst)
+            new_dst = preprocessors[ext](src, dst)
+            if isinstance(new_dst, type(None)):
+                return sitemap_entry(src, dst)
+            else:
+                assert isinstance(new_dst, str), \
+                    "Prprocessor %s did not return a destination file name" + \
+                    " but non string type %s with content %s" % \
+                    (preprocessors[ext], str(type(new_dst)), str(new_dst))
+                return sitemap_entry(src, new_dst)
         else:
             shutil.copy2(src, dst)
+            return sitemap_entry(src, dst)
+    else:
+        return sitemap_entry(src, dst)
 
 
 def copytree_on_condition(src, dst, cond, preprocessors={}):
     """Copies all files and directories from src to dst. Files are only copied
     if cond(src, dst) is True. Copying may be channeled through a preprocessor.
+    Returns sitemap (list of dicts).
     """
+    sitemap = []
+
     names = os.listdir(src)
     os.makedirs(dst, exist_ok=True)
     for name in names:
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
         if os.path.isdir(srcname):
-            copytree_on_condition(srcname, dstname, cond, preprocessors)
+            sitemap.extend(
+                copytree_on_condition(srcname, dstname, cond, preprocessors))
         else:
-            copy_on_condition(srcname, dstname, cond, preprocessors)
+            sitemap.append(
+                copy_on_condition(srcname, dstname, cond, preprocessors))
     shutil.copystat(src, dst)
+    return sitemap
 
 
 ##############################################################################

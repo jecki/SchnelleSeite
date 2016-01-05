@@ -294,8 +294,10 @@ try:
         location src and writes the result to 'dst'.
         """
         css = subprocess.check_output(["lessc", "", src])
-        with open(os.path.splitext(dst)[0] + '.css', "wb") as css_file:
+        dst_name = os.path.splitext(dst)[0] + '.css'
+        with open(dst_name, "wb") as css_file:
             css_file.write(css)
+        return dst_name
 
     STOCK_PREPROCESSORS[".less"] = less_preprocessor
 
@@ -317,8 +319,10 @@ if ".less" not in STOCK_PREPROCESSORS:
             with open(src) as less_file:
                 less_data = less_file.read()
                 css = lesscpy.compile(six.StringIO(less_data), minify=True)
-            with open(os.path.splitext(dst)[0] + '.css', "w") as css_file:
+            dst_name = os.path.splitext(dst)[0] + '.css'
+            with open(dst_name, "w") as css_file:
                 css_file.write(css)
+            return dst_name
 
         STOCK_PREPROCESSORS[".less"] = lesscpy_preprocessor
 
@@ -343,7 +347,7 @@ def create_site(root, site_path,
             (root, current_content) -> content that can manipulate content
             (like replace special tokens or keywords like "STATIC") just before
             writing them to the disk.
-        preprocessors(dicstionary): A dictionary of external preprocessors 
+        preprocessors(dicstionary): A dictionary of external preprocessors
             (file extension -> preprocessor) that preprocesses files before
             writing them. Other than writers, preprocessors work directly on
             the files rather than on the data, loaded into memory. Usually a
@@ -353,12 +357,15 @@ def create_site(root, site_path,
     assert isinstance(root, sitetree.Folder)
 
     def create_static_entries(root, path):
+        sitemap = []
         for entry in root:
             if isinstance(root[entry], sitetree.StaticEntry):
-                root[entry].copy_entry(path, preprocessors)
-                print("Copying static entries " + entry)
+                print("Copying static dir or file: " + entry)
+                sitemap.extend(root[entry].copy_entry(path, preprocessors))
             elif isinstance(root[entry], sitetree.Folder):
-                create_static_entries(root[entry], os.path.join(path, entry))
+                sitemap.extend(create_static_entries(
+                    root[entry], os.path.join(path, entry)))
+        return sitemap
 
     def create_branch(root, path, lang, writers):
         with utility.create_and_enter_dir(path):
@@ -382,7 +389,7 @@ def create_site(root, site_path,
                             print("Writing file " + entry + ".html")
 
     with utility.create_and_enter_dir(site_path):
-        create_static_entries(root, "")
+        print(create_static_entries(root, ""))
         for lang in root.metadata.get('config', {}).get('languages', ['ANY']):
             create_branch(root, lang, lang, writers)
 
