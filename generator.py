@@ -254,8 +254,10 @@ def fillin_URL_templates(root, content):
 
     content = re.sub('href *= *"STATIC:/?', 'href="' + static, content)
     content = re.sub('src *= *"STATIC:/?', 'src="' + static, content)
+    content = re.sub('content *= *"STATIC:/?', 'content="' + static, content)
     content = re.sub('href *= *"TOPLEVEL:/?', 'href="' + toplevel, content)
     content = re.sub('src *= *"TOPLEVEL:/?', 'src="' + toplevel, content)
+    content = re.sub('content *= *"TOPLEVEL:/?', 'content="' + toplevel, content)
     return content
 
 
