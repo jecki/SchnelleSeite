@@ -82,7 +82,7 @@ body { max-width: 760px; min-width: 320px;
        padding-left: 16px; padding-right: 16px;
        font-size:1.35em; line-height:1.5em; }
 
-a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr, a.internal {
+a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr, a.internal, figcaption {
     font-family:"Liberation Sans", Arial, Helvetica, sans-serif;
 }
 
@@ -128,9 +128,10 @@ p, li, dd, dt   {
 /* ol.bibliography { font-size:0.8em; line-height:0.9em; } */
 
 p.footnote      { font-size:0.85em; line-height:1.3em; }
-p.figure        { font-size:0.9em; line-height:1.3em; text-align:center; }
+figure        { text-align:center; }
+figcaption     { font-size:0.85em; line-height:1.2em; text-align:center; }
 
-div.caption     { font-size:0.8em; line-height:1.1em; text-align:center; }
+img { max-width: 100%; height:auto; }
 
 dl, ol, ul { padding-top: 0.5em; }
 
@@ -1377,11 +1378,11 @@ class TexParser:
                         SCALEFactors[name] = w / 12.0
                     if CONVERTEPS and name.endswith(".eps"):
                         name = name[:-4] + ".png"
-                    s = s + '\n<br /><img src="' + name + \
-                        '" alt="[image: ' + name + ']" /><br />\n'
+                    s = s + '<br /><img src="' + name + \
+                        '" alt="[image: ' + name + ']" /><br />'
                 elif self.token[1:8] == "caption":
-                    s = s + ' <div class="caption">'
-                    stack.append("</div> ")
+                    s = s + ' <figcaption>'
+                    stack.append('</figcaption>')
                 elif self.token[1:6] == "label":
                     name = self.token[7:-1]
                     if self.figureFlag:
@@ -1536,7 +1537,7 @@ class TexParser:
             if (self.token in (TermPSequence + ["}"])):
                 if self.token == "}" and len(stack) > 0:
                     # assert False, str(sequence[-2:])
-                    sequence.append(self.stack.pop())
+                    sequence.append(self.stack.pop())                    
                     self.token = self.getToken()
                     ptag = 0
                 else:
@@ -1707,17 +1708,20 @@ class TexParser:
             elif self.token == "\\begin{figure}":
                 if sequence[-1][0:2] == "<p":
                     sequence = sequence[:-1]
-                pclass = ' class="figure"'
-                ptag = 1
+                sequence.append("<figure>\n")
+                ptag = 0
                 self.figureFlag = True
                 self.figureNr += 1
             elif self.token == "\\end{figure}":
-                while (sequence[-1][1:4] == "</p") or \
-                        (sequence[-1][0:2] == "<p"):
-                    sequence = sequence[:-1]
+                i = -1
+                while sequence[i][0:8] != "<figure>":
+                    if (sequence[i][0:2] == "<p") or \
+                            (sequence[i][1:4] == "</p"):
+                        del sequence[i]
+                    else:
+                        i -= 1
                 pclass = ''
-                if self.isP(sequence):
-                    sequence.append("\n</p>\n")
+                sequence.append("\n</figure>\n")
                 self.figureFlag = False
 
             elif self.token == r"\begin{tabular}":
@@ -1770,6 +1774,8 @@ class TexParser:
                     sequence.append("<br />")
 
             elif self.token == "\\begin{abstract}":
+                if sequence[-1][0:2] == "<p":
+                    sequence = sequence[:-1]                
                 if LANG == "de":
                     sequence.append(
                         "\n<br /><h3>Zusammenfassung:</h3>\n")
@@ -1870,6 +1876,14 @@ class TexParser:
         sequence = self.sequenceOfParagraphs(preambel=preambel)
         if len(sequence) > 0 and sequence[-1][0:2] == "<p":
             sequence = sequence[:-1]
+
+        i = len(sequence) - 1
+        while i >= 0 and (sequence[i][0:2] != "<p") and \
+                (sequence[i][1:4] != "</p"):
+            i -= 1
+        if i >= 0 and sequence[i][0:2] == "<p":
+            sequence.append("\n</p>\n")
+
         self.currPage.body = self.currPage.body + sequence
 
     def ParseHeading(self):
