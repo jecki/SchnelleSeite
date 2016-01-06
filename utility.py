@@ -17,6 +17,7 @@ limitations under the License.
 """
 
 import contextlib
+import datetime
 import os
 import re
 import shutil
@@ -88,43 +89,45 @@ def is_newer(src_file, dst_file):
     # or os.path.getsize(src_file) != os.path.getsize(dst_file)
 
 
-def copy_on_condition(src, dst, cond, preprocessors={}):
+def isodate(filename):
+    return datetime.date.fromtimestamp(os.stat(filename).st_mtime).isoformat()
+
+
+def copy_on_condition(src, dst, cond, preprocessors={}, sitemap=[]):
     """Copies src to dst, if cond(src, dst) returns True. If a preprocessor
     is given for the extentions of the file, the preprocessor function is
     called with the source and destination name instead of the system's
     copy function.
-    returns the destination path name (which may have been changed by
-    a 'preprocessor').
-    Returns a sitemap entry (dict).
+    Adds `dst` to sitemap if `dst` is an HTML or PDF file,
+    otherwise an empty list is returned.
     """
-    def sitemap_entry(src, dst):
-        return {"loc": dst}
+    def add_to_sitemap(src, dst):
+        ext = os.path.splitext(dst)[1].lower()
+        if ext == ".pdf" or ext == ".html":
+            sitemap.append({"loc": dst, "lastmod": isodate(src),
+                            "changefreq": "yearly", "priority": "0.4"})
 
     if cond(src, dst):
         ext = os.path.splitext(src)[1]
         if ext in preprocessors:
             new_dst = preprocessors[ext](src, dst)
-            if isinstance(new_dst, type(None)):
-                return sitemap_entry(src, dst)
-            else:
+            if not isinstance(new_dst, type(None)):
                 assert isinstance(new_dst, str), \
                     "Prprocessor %s did not return a destination file name" + \
                     " but non string type %s with content %s" % \
                     (preprocessors[ext], str(type(new_dst)), str(new_dst))
-                return sitemap_entry(src, new_dst)
+                dst = new_dst
         else:
             shutil.copy2(src, dst)
-            return sitemap_entry(src, dst)
-    else:
-        return sitemap_entry(src, dst)
+    add_to_sitemap(src, dst)
 
 
-def copytree_on_condition(src, dst, cond, preprocessors={}):
+def copytree_on_condition(src, dst, cond, preprocessors={}, sitemap=[]):
     """Copies all files and directories from src to dst. Files are only copied
     if cond(src, dst) is True. Copying may be channeled through a preprocessor.
-    Returns sitemap (list of dicts).
+    Adds files sitemap entries (dict) to `sitemap`, in case the destination
+    file name ends with '.html' or '.pdf'
     """
-    sitemap = []
 
     names = os.listdir(src)
     os.makedirs(dst, exist_ok=True)
@@ -132,13 +135,11 @@ def copytree_on_condition(src, dst, cond, preprocessors={}):
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
         if os.path.isdir(srcname):
-            sitemap.extend(
-                copytree_on_condition(srcname, dstname, cond, preprocessors))
+            copytree_on_condition(srcname, dstname, cond, preprocessors,
+                                  sitemap)
         else:
-            sitemap.append(
-                copy_on_condition(srcname, dstname, cond, preprocessors))
+            copy_on_condition(srcname, dstname, cond, preprocessors, sitemap)
     shutil.copystat(src, dst)
-    return sitemap
 
 
 ##############################################################################

@@ -17,6 +17,7 @@ limitations under the License.
 
 import os
 import re
+import shutil
 import subprocess
 
 import loader
@@ -51,7 +52,7 @@ def is_excluded(name):
 def is_static_entry(name, site_path, config, folder_config):
     """Returns true, if file or subdirectory shall only be copied, but not be
     processed."""
-    #print(config.get('static_entries', set()))
+    # print(config.get('static_entries', set()))
 #     if name == "apppages":
 #         print(loader.fullpath(name, site_path))
 #         print(name, site_path)
@@ -221,23 +222,11 @@ def scan_directory(path, loaders, injected_metadata={}, organizers=[],
     return folder
 
 
-# ###############################################################################
-# #
-# reorganize items
-# #
-# ###############################################################################
-#
-# def reorganize_site(root, organizers=[]):
-#     """Traverses the site tree and applies organizers to its folders."""
-# TODO: Implement this function!!!
-#     pass
-
-
-###############################################################################
+##############################################################################
 #
 # write site
 #
-###############################################################################
+##############################################################################
 
 
 #
@@ -334,8 +323,7 @@ if ".less" not in STOCK_PREPROCESSORS:
 #
 
 
-def create_site(root, site_path,
-                writers=STOCK_WRITERS,
+def create_site(root, site_path, metadata, writers=STOCK_WRITERS,
                 preprocessors=STOCK_PREPROCESSORS):
     """Writes a a website or folder of a website stored in a sitetree structure
     to the disk.
@@ -355,54 +343,101 @@ def create_site(root, site_path,
             programm.
     """
     assert isinstance(root, sitetree.Folder)
+    sitemap = []
 
     def create_static_entries(root, path):
-        sitemap = []
         for entry in root:
             if isinstance(root[entry], sitetree.StaticEntry):
                 print("Copying static dir or file: " + entry)
                 sitemap.extend(root[entry].copy_entry(path, preprocessors))
             elif isinstance(root[entry], sitetree.Folder):
-                sitemap.extend(create_static_entries(
-                    root[entry], os.path.join(path, entry)))
-        return sitemap
+                create_static_entries(root[entry], os.path.join(path, entry))
 
     def create_branch(root, path, lang, writers):
-        with utility.create_and_enter_dir(path):
+        with utility.create_and_enter_dir(os.path.basename(path)):
             print("Creating directory " + path)
             for entry in root:
                 if entry.startswith("_"):
                     continue
+
                 if isinstance(root[entry], sitetree.Folder):
                     if not os.path.exists(entry):
                         os.mkdir(entry)
-                    create_branch(root[entry], entry, lang, writers)
+                    create_branch(root[entry], path + "/" + entry, lang,
+                                  writers)
+
                 elif not isinstance(root[entry], sitetree.StaticEntry):
                     if root[entry].is_data() or root[entry].is_fragment():
                         print("%s is not an html page!" % entry)
                     else:
-                        with open(entry + ".html", "w") as f:
-                            content = root[entry].bestmatch(lang)['content']
-                            for wr in writers:
-                                content = wr(root, content)
-                            f.write(content)
-                            print("Writing file " + entry + ".html")
+                        page = root[entry].bestmatch(lang)
+                        entryname = entry + ".html"
+                        content = page['content']
+                        for wr in writers:
+                            content = wr(root, content)
+
+                        # only overwrite generated files if changes occured
+                        compare = ""
+                        if os.path.isfile(entryname):
+                            with open(entryname, "r") as f:
+                                compare = f.read()
+
+                        # speed this up with generating and saving hash values?
+                        if compare != content:
+                            with open(entryname, "w") as f:
+                                print("Writing file " + entryname)
+                                f.write(content)
+
+                        pri = page['metadata'].get('sitemap-priority', '0.5')
+                        cfreq = page['metadata'].get('sitemap-changefreq',
+                                                     'monthly')
+                        sitemap.append({"loc": path + "/" + entryname,
+                                        "lastmod": utility.isodate(entryname),
+                                        "changefreq": cfreq,
+                                        "priority":  pri})
+
+    shutil.copy2(metadata.get('config', {}).get('root_index', '__root.html'),
+                 os.path.join(site_path, "index.html"))
 
     with utility.create_and_enter_dir(site_path):
-        print(create_static_entries(root, ""))
+        create_static_entries(root, "")
         for lang in root.metadata.get('config', {}).get('languages', ['ANY']):
             create_branch(root, lang, lang, writers)
 
+        base_url = metadata.get('config', {}).get('base_url', '')
+        assert base_url[-1:] != "/"
 
-###############################################################################
+        print("Writing sitemap.xml")
+        sitemap.sort(key=lambda item: item['loc'])
+        with open('sitemap.xml', 'w') as f:
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n'
+                    '<urlset xmlns="http://www.sitemaps.org/'
+                    'schemas/sitemap/0.9">\n')
+
+            f.write('<url>\n<loc>' + base_url + '/index.html</loc>\n'
+                    '<lastmod>' + utility.isodate('index.html') + '</lastmod>'
+                    '\n<changefreq>yearly</changefreq>\n'
+                    '<priority>0.1</priority>\n</url>\n')
+
+            for entry in sitemap:
+                f.write('<url>\n'
+                        '<loc>' + base_url + "/" + entry['loc'] + '</loc>\n'
+                        '<lastmod>' + entry['lastmod'] + '</lastmod>\n'
+                        '<changefreq>' + entry['changefreq'] + '</changefreq>'
+                        '\n<priority>' + entry['priority'] + '</priority>\n'
+                        '</url>\n')
+
+            f.write('</urlset>\n\n')
+
+##############################################################################
 #
 # main function
 #
-###############################################################################
+##############################################################################
 
 
 def generate_site(path, metadata):
     """Generates the site from the source at 'path'.
     """
     tree = scan_directory(path, loader.STOCK_LOADERS, metadata)
-    create_site(tree, os.path.join(path, '__site'), STOCK_WRITERS)
+    create_site(tree, os.path.join(path, '__site'), metadata, STOCK_WRITERS)

@@ -102,6 +102,8 @@ a.external {
 @media screen and (min-width: 680px) {
     p,ul,ol,li,dl,dd,dt, a.internal, a.bibref {
         font-feature-settings: "liga";
+        font-variant-ligatures: common-ligatures;
+        text-align:justify;
     }
 }
 
@@ -111,7 +113,7 @@ a.external {
     }
 }
 
-p,ul,ol,li,dl,dd,dt, a.internal { color: #303030; }
+p,ul,ol,li,dl,dd,dt, a.internal { color: #202020; }
 a.bibref { color: #202070; }
 
 p, li, dd, dt   {
@@ -284,6 +286,7 @@ SCALEFactors = {}
 
 INLINECMDS = [r'{\(', r'{\ldots', r'{"`', r'{\begin' r'{\includegraphics']
 ENTITIES = ['&ldquo;', '&rdquo;']
+
 
 class ScannerError(Exception):
 
@@ -473,8 +476,8 @@ class TexScanner:
             for cmd in commandList:
                 if self.line[self.pos:self.pos + len(cmd)] == cmd:
                     # assert False, cmd # Debugging
-                    return True        
-        
+                    return True
+
         # if self.eof: return ""
         if self.eof:
             raise ScannerError("End of File reached")
@@ -568,11 +571,11 @@ class TexScanner:
                         self.pos = self.pos + 1
                     self.pos = self.pos + 1
             return command
-        
+
         if chkCmds(INLINECMDS):
             self.pos += 1
             return "{"
-        
+
         if self.line[self.pos:self.pos + 2] == "{\\":
             command = "{\\"
             self.pos = self.pos + 2
@@ -829,7 +832,10 @@ class HTMLPage:
                                 "</p>\n", "<br />\n"])
                 if BIBTEX_INFO:
                     bib.append("\n<b>%s</b>\n" % BIBTEX_STR)
-                    bib.extend(["<pre>", BIBTEX_INFO, "</pre>\n"])
+                    bib_info = BIBTEX_INFO.replace("\n", "<br/>\n")
+                    lead_in = '<div style="font-family:monospace;' \
+                              'line-height:1.2em;font-size:0.8em;">'
+                    bib.extend([lead_in, bib_info, "</div>\n"])
 
             page = self.head + self.top + self.body + bib + self.end + \
                 [self.genPDFMessage()] + self.tail
@@ -841,7 +847,8 @@ class HTMLPage:
                 r'\<meta name="keywords".*?>', "", self.head[0])
             self.head[0] = self.head[0].replace("$metadata", "")
             self.createLink()
-            self.top = [HTMLPageTop] + self.toplink + ['<hr noshade="noshade" />\12'] + \
+            self.top = [HTMLPageTop] + self.toplink + \
+                       ['<hr noshade="noshade" />\12'] + \
                        ['<table width="100%" summary="table of contents">'
                         '\12<tr>\12<td class="toc">']
             self.end = ["</td>\12</tr>\12</table>\12"] + self.link
@@ -1047,7 +1054,7 @@ class TexParser:
         self.clineEnd = 0
         self.itemEnv = []  # stack for nested itemize, enumerate, description..
         self.stack = []
-        
+
     def copyImage(self, name):
         print("processing: " + name)
         out = name[:-4] + ".png"
@@ -1132,6 +1139,8 @@ class TexParser:
                 f = open("index.html", "w")
                 i = p.find("</head>")
                 canonical = '<link rel="canonical" href="' + \
+                            DESTINATION_NAME + '.html" />\n' + \
+                            '<meta http-equiv="refresh" content="0; URL=' + \
                             DESTINATION_NAME + '.html" />\n'
                 # p = p[0:i] + canonical + p[i:]
                 f.write(p[0:i])
@@ -1449,9 +1458,9 @@ class TexParser:
                 sequence.append(s + " \12")
                 s = ""
                 self.leadIn = 0
-                
+
         if len(stack) > 0:
-            self.stack = stack        
+            self.stack = stack
         if s != "":
             sequence.append(s)
         return sequence
@@ -1479,14 +1488,14 @@ class TexParser:
                 del sequence[-i]
             else:
                 sequence.append("\n</p>\n")
-                
+
     def passBracesBlock(self):
         content = []
         if self.token.endswith("}"):
             self.token = self.getToken()
         if self.token == "{":
             self.token = self.getToken()
-            
+
         openBraces = 1
         while openBraces > 0:
             content.append(self.token)
@@ -1534,7 +1543,7 @@ class TexParser:
                     break
 
             palign = self.checkAlignment(palign)
-            
+
             if ptag == 1 and not self.tableFlag and \
                     not self.token.startswith(r"\end{"):
                 self.eliminateOpenP(sequence)
@@ -1643,15 +1652,15 @@ class TexParser:
                 self.token = self.getToken()
                 sequence.extend(content)
                 ptag = 0
-                
+
             elif self.token in ["\\begin{quote}", "\\begin{quotation}"]:
                 self.eliminateOpenP(sequence)
                 sequence.extend(["<blockquote>\12"])
                 ptag = 0
-                
+
             elif self.token in ["\\end{quote}", "\\end{quotation}"]:
                 sequence.extend(["</blockquote>\12"])
-                
+
             elif self.token == "\\begin{enumerate}":
                 self.eliminateOpenP(sequence)
                 sequence.append("<ol>\12")
@@ -1746,7 +1755,7 @@ class TexParser:
                 if endToken.find("eqnarray") >= 0:
                     sequence.append('\n<br /><br />')
                 sequence.append('<script type="math/tex">\n')
-                beginToken = self.token.replace("displaymath", "eqnarray") 
+                beginToken = self.token.replace("displaymath", "eqnarray")
                 sequence.append(beginToken)
                 while 1:
                     line = self.scanner.getRawLine()
@@ -1758,7 +1767,7 @@ class TexParser:
                 sequence.append(endToken)
                 sequence.append("\n</script>\n")
                 if beginToken.find("eqnarray") >= 0:
-                    sequence.append("<br />")                
+                    sequence.append("<br />")
 
             elif self.token == "\\begin{abstract}":
                 if LANG == "de":
@@ -1848,7 +1857,7 @@ class TexParser:
                                 sequence.append("\n</p>\n")
                     else:
                         sequence.append("\12")
-                        
+
             if not (self.token in (TermPSequence + ["}"])):
                 self.token = self.getToken()
                 while self.token == " ":
@@ -2085,8 +2094,6 @@ while n < len(sys.argv):
         HTMLPageHead = '<?xml version="1.0" encoding="UTF-8"?>' + \
             HTMLPageHead
         ENDING = ".xhtml"
-    elif sys.argv[n][0:2] == "-i":
-        INDEX_FILE = "toc.html"
     n += 1
 
 # debugging: texFileName = "Kritik.tex"
@@ -2107,7 +2114,6 @@ if texFileName[-4:].lower() != ".tex":
           -s name       : name of destination directory (default: texfile)
           -l name       : language (e.g. "en-US")
           -x            : create xhtml instead of html pages
-          -i            : duplicate table of contents as "index.html" file
           -css path     : dump css to path
     ''')
 else:

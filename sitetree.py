@@ -165,14 +165,16 @@ class StaticEntry:
               the dictionary. Preprocessors can be employed to minify
               javascript files or compile less stylsheets to css stylesheets.
         """
+        sitemap = []
         if self.isdir:
-            return copytree_on_condition(self.entrypath, os.path.join(
-                                         dst_path, self.entryname),
-                                         is_newer, preprocessors)
+            copytree_on_condition(self.entrypath,
+                                  os.path.join(dst_path, self.entryname),
+                                  is_newer, preprocessors, sitemap)
         else:
-            return copy_on_condition(self.entrypath,
-                                     os.path.join(dst_path, self.entryname),
-                                     is_newer, preprocessors)
+            copy_on_condition(self.entrypath,
+                              os.path.join(dst_path, self.entryname),
+                              is_newer, preprocessors, sitemap)
+        return sitemap
 
 
 class Folder(collections.OrderedDict):
