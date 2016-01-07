@@ -104,8 +104,11 @@ def copy_on_condition(src, dst, cond, preprocessors={}, sitemap=[]):
     def add_to_sitemap(src, dst):
         ext = os.path.splitext(dst)[1].lower()
         if ext == ".pdf" or ext == ".html":
-            sitemap.append({"loc": dst, "lastmod": isodate(src),
-                            "changefreq": "yearly", "priority": "0.4"})
+            sitemap.append({"loc": dst,
+                            "alt_locs": [],
+                            "lastmod": isodate(src),
+                            "changefreq": "yearly",
+                            "priority": "0.4"})
 
     if cond(src, dst):
         ext = os.path.splitext(src)[1]

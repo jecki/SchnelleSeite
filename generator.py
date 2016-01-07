@@ -346,6 +346,7 @@ def create_site(root, site_path, metadata, writers=STOCK_WRITERS,
     """
     assert isinstance(root, sitetree.Folder)
     sitemap = []
+    all_languages = root.metadata.get('config', {}).get('languages', ['ANY'])
 
     def create_static_entries(root, path):
         for entry in root:
@@ -393,17 +394,23 @@ def create_site(root, site_path, metadata, writers=STOCK_WRITERS,
                         pri = page['metadata'].get('sitemap-priority', '0.5')
                         cfreq = page['metadata'].get('sitemap-changefreq',
                                                      'monthly')
+                        alt_locs = []
+                        if len(all_languages) > 1:
+                            for l in all_languages:
+                                l_loc = l + path[len(lang):] + "/" + entryname
+                                alt_locs.append({'lang': l, 'loc': l_loc})
                         sitemap.append({"loc": path + "/" + entryname,
+                                        "alt_locs": alt_locs,
                                         "lastmod": utility.isodate(entryname),
                                         "changefreq": cfreq,
-                                        "priority":  pri})
+                                        "priority":  "%1.1f" % float(pri)})
 
     shutil.copy2(metadata.get('config', {}).get('root_index', '__root.html'),
                  os.path.join(site_path, "index.html"))
 
     with utility.create_and_enter_dir(site_path):
         create_static_entries(root, "")
-        for lang in root.metadata.get('config', {}).get('languages', ['ANY']):
+        for lang in all_languages:
             create_branch(root, lang, lang, writers)
 
         base_url = metadata.get('config', {}).get('base_url', '')
@@ -412,9 +419,9 @@ def create_site(root, site_path, metadata, writers=STOCK_WRITERS,
         print("Writing sitemap.xml")
         sitemap.sort(key=lambda item: item['loc'])
         with open('sitemap.xml', 'w') as f:
-            f.write('<?xml version="1.0" encoding="UTF-8"?>\n'
-                    '<urlset xmlns="http://www.sitemaps.org/'
-                    'schemas/sitemap/0.9">\n')
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n <urlset '
+                    'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+                    'xmlns:xhtml="http://www.w3.org/1999/xhtml">\n')
 
             f.write('<url>\n<loc>' + base_url + '/index.html</loc>\n'
                     '<lastmod>' + utility.isodate('index.html') + '</lastmod>'
@@ -422,9 +429,15 @@ def create_site(root, site_path, metadata, writers=STOCK_WRITERS,
                     '<priority>0.1</priority>\n</url>\n')
 
             for entry in sitemap:
+                alt_locs_xml = [('<xhtml:link rel="alternate" '
+                                 'hreflang="{lang}" '
+                                 'href="' + base_url + '/{loc}" />').
+                                format(**alt) for alt in entry['alt_locs']]
+
                 f.write('<url>\n'
-                        '<loc>' + base_url + "/" + entry['loc'] + '</loc>\n'
-                        '<lastmod>' + entry['lastmod'] + '</lastmod>\n'
+                        '<loc>' + base_url + "/" + entry['loc'] + '</loc>\n' +
+                        "\n".join(alt_locs_xml) +
+                        '\n<lastmod>' + entry['lastmod'] + '</lastmod>\n'
                         '<changefreq>' + entry['changefreq'] + '</changefreq>'
                         '\n<priority>' + entry['priority'] + '</priority>\n'
                         '</url>\n')

@@ -113,7 +113,11 @@ a.external {
     }
 }
 
-p,ul,ol,li,dl,dd,dt, a.internal { color: #202020; }
+p,ul,ol,li,dl,dd,dt, a.internal { color: #000000; }
+h2 { color:#202020; }
+h3 { color:#303030; }
+h4,h5,h6 { color:#040404;}
+
 a.bibref { color: #202070; }
 
 p, li, dd, dt   {
