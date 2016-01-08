@@ -96,14 +96,14 @@ p,ul,ol,li,dd,dt,dl, blockquote, a.bibref {
     letter-spacing: -0.01em; }
 
 a.external {
-    font-size: 0.9em;
+    font-size: 0.95em;
 }
 
 @media screen and (min-width: 680px) {
     p,ul,ol,li,dl,dd,dt, a.internal, a.bibref {
+        text-align:justify;
         font-feature-settings: "liga";
         font-variant-ligatures: common-ligatures;
-        text-align:justify;
     }
 }
 
@@ -113,14 +113,11 @@ a.external {
     }
 }
 
-p,ul,ol,li,dl,dd,dt, a.internal { color: #000000; }
-h2 { color:#000000; }
-h3 { color:#000000; }
-h4,h5,h6 { color:#000000;}
+p,ul,ol,li,dl,dd,dt, a.internal, { color: #000000; }
 
 a.bibref { color: #202070; }
 
-p, li, dd, dt   {
+p, li, dd, dt, h1, h2, h3, h4, h5, h6   {
     hyphens: auto;
     -moz-hyphens: auto;
     -ms-hyphens: auto;
@@ -344,6 +341,14 @@ class TexScanner:
         while 1:
             while 1:
                 s = self.getRawLine()
+                if (s.endswith("\\~{\n") or s.endswith("\\~{ \n") or
+                        s.endswith("\\textasciitilde\n") or
+                        s.endswith("\\textasciitilde \n")):
+                    s2 = self.getRawLine()
+                    if not (s.endswith(" \n") or s2.startswith(" ")):
+                        s = s[:-1] + " " + s2
+                    else:
+                        s = s[:-1] + s2
                 if self.patchBibFile:
                     s = re.sub("~", " ", s)
                 if s != "":
@@ -446,6 +451,18 @@ class TexScanner:
 
     def getToken(self):
 
+        def markup_urls(s):
+            a = s.find("https://")
+            b = s.find("http://")
+            c = s.find(" www.")
+            i = a if a >= 0 else b if b >= 0 else c+1 if c >= 0 else -1
+            if i == 0 or (i > 0 and s[i-1] != "{"):
+                k = s.find(" ", i)
+                k = len(s) if k < 0 else k
+                s = s[:i] + r"\url{" + s[i:k] + "}" + s[k:]
+                # print("URL MARKED UP: " + s)
+            return s
+
         def stripLine(s):
             s = re.sub(r"\\\-", "", s)
             s = re.sub(r"\\\_", "_", s)
@@ -465,7 +482,8 @@ class TexScanner:
             # s = s.replace(r"\]", r"\end{displaymath}")
             s = s.replace(r"\%", "%")
             s = re.sub(r'""', "", s)
-            s = re.sub(r"\\\~{ }", "~", s)
+            s = re.sub(r"\\\~{ +}", "~", s)
+            s = re.sub(r"\\\textasciitilde *", "~", s)
             s = re.sub(r"---", "-", s)
             s = re.sub(r"--", "-", s)
             # Sonderzeichen
@@ -475,6 +493,7 @@ class TexScanner:
             s = re.sub(r"\\\\`a", "à", s)
             s = re.sub(r"\\\\u{g}", "&#287;", s)
             s = re.sub(r"\\\\i ", "&#305;", s)
+            s = markup_urls(s)
             return s
 
         def chkCmds(commandList):
@@ -718,6 +737,7 @@ class HTMLPage:
 #         # print("Automatic Link activation is deprecated!!!")
 #         for i in range(len(l)):
 #             l[i] = self.activateLinksInStr(l[i])
+
 
     def crossReferences(self, s):
         # global CROSSReferences
@@ -1384,6 +1404,8 @@ class TexParser:
                 elif self.token[1:8] == "caption":
                     s = s + ' <figcaption>'
                     stack.append('</figcaption>')
+                elif self.token[1:7] == "ignore":
+                    pass
                 elif self.token[1:6] == "label":
                     name = self.token[7:-1]
                     if self.figureFlag:
