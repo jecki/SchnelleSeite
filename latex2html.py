@@ -114,9 +114,9 @@ a.external {
 }
 
 p,ul,ol,li,dl,dd,dt, a.internal { color: #000000; }
-h2 { color:#202020; }
-h3 { color:#303030; }
-h4,h5,h6 { color:#040404;}
+h2 { color:#000000; }
+h3 { color:#000000; }
+h4,h5,h6 { color:#000000;}
 
 a.bibref { color: #202070; }
 
@@ -125,7 +125,7 @@ p, li, dd, dt   {
     -moz-hyphens: auto;
     -ms-hyphens: auto;
     -webkit-hyphens: auto;
-    color:#303030;
+    color:#000000;
 }
 
 
@@ -639,50 +639,47 @@ class HTMLPage:
             '\12<table width="100%" border="0" frame="void" cellpadding="0"'
             ' cellspacing="2" summary="navigation bar">\12<tr>\12']
         self.link.append(
-            '<td class="bottomlink" align="center" valign="middle"'
-            ' width="100%"><hr noshade="noshade" /></td>\12')
+            '<td class="bottomlink" style="text-align:left;" valign="middle">'
+            '<hr noshade="noshade" /></td>\12'
+            '<td class="bottomlink" style="text-align:right; width:82px;" valign="middle">')
         if self.up is not None:
-            self.link.append('<td class="bottomlink" align="center"'
-                             ' valign="middle"><a class="internal" href="' +
+            self.link.append('<a class="internal" href="' +
                              self.name + '#pagetop' + '"><img width="40"'
                              ' height="40" border="0" align="middle"'
-                             ' src="up.jpg" alt="page top" /></a></td>\12')
+                             ' src="up.jpg" alt="page top" /></a>')
         if self.next is not None:
-            self.link.append('<td class="bottomlink" align="center"'
-                             ' valign="middle"><a class="internal" href="' +
+            self.link.append('<a class="internal" href="' +
                              self.next.name + '"><img width="40" height="40"'
                              ' border="0" align="middle" src="next.jpg"'
-                             ' alt="next" /></a></td>\12')
-        self.link.append("</tr>\12</table>\12\12")
+                             ' alt="next" /></a>')
+        self.link.append("</td>\12</tr>\12</table>\12\12")
 
         self.toplink = ['\12<table width="100%" border="0" frame="void"'
                         ' cellpadding="0" cellspacing="0"'
-                        ' summary="navigation bar">\12<tr>\12']
+                        ' summary="navigation bar">\12<tr>\12'
+                        '<td class="toplink" style="text-align:left; width:122px;" valign="middle">']
         if self.prev is not None:
-            self.toplink.append('<td class="toplink" align="center"'
-                                ' valign="middle"><a class="internal"'
+            self.toplink.append('<a class="internal"'
                                 ' href="' + self.prev.name + '">'
                                 '<img width="40" height="40" border="0"'
                                 ' align="middle" src="prevgrey.jpg"'
-                                ' alt="previous" /></a></td>\12')
+                                ' alt="previous" /></a>')
         if self.up is not None:
-            self.toplink.append('<td class="toplink" align="center" '
-                                'valign="middle"><a class="internal" href="' +
+            self.toplink.append('<a class="internal" href="' +
                                 self.up.name + '"><img width="40" height="40"'
                                 ' border="0" align="middle" src="upgrey.jpg"'
-                                ' alt="up" /></a></td>\12')
+                                ' alt="up" /></a>')
         if self.next is not None:
-            self.toplink.append('<td class="toplink" align="center"'
-                                ' valign="middle"><a class="internal" href="'
+            self.toplink.append('<a class="internal" href="'
                                 + self.next.name + '"><img width="40"'
                                 ' height="40" border="0" align="middle"'
                                 ' src="nextgrey.jpg" alt="next" />'
-                                '</a></td>\12')
+                                '</a>')
         self.toplink.append(
-            '<td class="toplink" align="center" valign="middle" width="100%">'
+            '</td>\12<td class="toplink" style="text-align:center;" valign="middle">'
             + REFERENCE + '</td>\12')
         if self.contents is not None:
-            self.toplink.append('<td class="toplink" align="center"'
+            self.toplink.append('<td class="toplink" style="text-align:right;"'
                                 ' valign="middle"><a class="internal" href="'
                                 + self.contents.name + '">' + TOC_TITLE +
                                 '</a></td>\12')
@@ -1541,7 +1538,7 @@ class TexParser:
             if (self.token in (TermPSequence + ["}"])):
                 if self.token == "}" and len(stack) > 0:
                     # assert False, str(sequence[-2:])
-                    sequence.append(self.stack.pop())                    
+                    sequence.append(self.stack.pop())
                     self.token = self.getToken()
                     ptag = 0
                 else:
@@ -1779,7 +1776,7 @@ class TexParser:
 
             elif self.token == "\\begin{abstract}":
                 if sequence[-1][0:2] == "<p":
-                    sequence = sequence[:-1]                
+                    sequence = sequence[:-1]
                 if LANG == "de":
                     sequence.append(
                         "\n<br /><h3>Zusammenfassung:</h3>\n")
