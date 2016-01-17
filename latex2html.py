@@ -86,7 +86,7 @@ body { max-width: 760px; min-width: 320px;
 
 
 @media screen and (max-width: 480px) {
-    body { font-size:1.25em; line-height:1.25em; }
+    body { font-size:1.3em; line-height:1.25em; }
     h1 { font-size:1.45em; }
 }
 
