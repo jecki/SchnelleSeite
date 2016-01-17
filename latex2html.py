@@ -77,10 +77,18 @@ images = {"next.jpg": b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x
 # Background: f4ecd8
 
 CSSStylesheet = '''
+@import url(https://fonts.googleapis.com/css?family=Crimson+Text:400,700,400italic,700italic);
+
 body { max-width: 760px; min-width: 320px;
        margin-left:auto; margin-right:auto;
        padding-left: 16px; padding-right: 16px;
-       font-size:1.35em; line-height:1.5em; }
+       font-size:1.5em; line-height:1.4em; }
+
+
+@media screen and (max-width: 480px) {
+    body { font-size:1.25em; line-height:1.25em; }
+    h1 { font-size:1.45em; }
+}
 
 a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr, a.internal, figcaption {
     font-family:"Liberation Sans", Arial, Helvetica, sans-serif;
@@ -92,7 +100,7 @@ p.citeinfo { font-family:"Lucida Console", Monaco, monospace;
 pre, code { font-size:0.8em; line-height:1.4em; }
 
 p,ul,ol,li,dd,dt,dl, blockquote, a.bibref {
-    font-family: "Century SchoolBook URW", Garamond, Georgia, Times, serif;
+    font-family: "Crimson Text", "Century SchoolBook URW", Garamond, Georgia, Times, serif;
     letter-spacing: -0.01em; }
 
 a.external {
@@ -136,16 +144,23 @@ img { max-width: 100%; height:auto; }
 
 dl, ol, ul { padding-top: 0.5em; }
 
-td              { font-size:0.9em; line-height:1.05em; }
+td              { font-size:0.8em; line-height:1.05em; }
 td.title > h1   { line-height: 1.2em; }
 td.title > h2   { line-height: 1.2em; }
 td.title        { background-color:#F4F4F4; word-wrap: break-word; }
-td.toplink      { background-color:#F4F4F4; font-size: 0.95em; }
-td.bottomlink   { background-color:#FFFFFF; font-size: 0.95em; }
-td.toc          { background-color:#F4F4F4; font-size: 0.90em;
-                  line-height: 1.4em; }
-td.tochilit     { background-color:#E7E6E7; font-size: 0.90em;
-                  line-height: 1.4em; }
+td.toplink      { background-color:#F4F4F4; font-size: 0.85em; }
+td.bottomlink   { background-color:#FFFFFF; font-size: 0.85em; }
+td.toc          { background-color:#F4F4F4; font-size: 0.80em;
+                  line-height: 1.5em; }
+td.tochilit     { background-color:#E7E6E7; font-size: 0.80em;
+                  line-height: 1.5em; }
+div.authorref { text-align:center; font-size:0.9em;
+                width:100%; background-color:#F4F4F4; }
+
+@media screen and (max-width: 480px) {
+    td.toc { line-height: 1.65em; }
+    td.tochilit { line-height:1.65em; }
+}
 
 a:link         { text-decoration:none; }
 a:visited      { text-decoration:none; }
@@ -157,12 +172,12 @@ a.internal:visited      { color:blue; }
 a.internal:hover        { color:red; }
 a.internal:active       { color:blue; }
 
-h1 { font-size:1.6em; line-height:1.3em; }
-h2 { font-size:1.5em; line-height:1.3em; padding-top: 0.5em; }
-h3 { font-size:1.4em; line-height:1.3em; padding-top: 0.5em; }
-h4 { font-size:1.3em; line-height:1.3em; font-weight:bold;
+h1 { font-size:1.45em; line-height:1.3em; }
+h2 { font-size:1.4em; line-height:1.3em; padding-top: 0.5em; }
+h3 { font-size:1.3em; line-height:1.3em; padding-top: 0.5em; }
+h4 { font-size:1.2em; line-height:1.3em; font-weight:bold;
      padding-top: 0.4em; }
-h5 { font-size:1.2em; line-height:1.3em; font-weight:bold;
+h5 { font-size:1.15em; line-height:1.3em; font-weight:bold;
      padding-top: 0.3em; }
 h6 { font-size:1.1em; line-height:1.3em; font-weight:bold;
      padding-top: 0.2em; }
@@ -256,13 +271,15 @@ HTMLPageTop = '''
 '''
 
 HTMLTitlePageBottom = '''
-<p align="center"><a href="$pdfurl" style="$style">$pdfmessage</a></p>
+<p style="text-align:center;">
+  <a href="$pdfurl" style="$style">$pdfmessage</a>
+</p>
 '''
 
 HTMLPageTail = '''
 
-<p id="share" align="center"
- style="text-align:center; font-family:sans-serif; font-weight:bold;">
+<p id="share"
+   style="text-align:center; font-family:sans-serif; font-weight:bold;">
 <a href="http://twitter.com/share?url=$url&text=$title" target="_blank"
    class="share-btn twitter">t</a>
 <a href="https://plus.google.com/share?url=$url" target="_blank"
@@ -673,7 +690,9 @@ class HTMLPage:
                              ' alt="next" /></a>')
         self.link.append("</td>\12</tr>\12</table>\12\12")
 
-        self.toplink = ['\12<table width="100%" border="0" frame="void"'
+        self.toplink = ['\n'
+                        '<div class="authorref">' + REFERENCE + '</div>'
+                        '\12<table width="100%" border="0" frame="void"'
                         ' cellpadding="0" cellspacing="0"'
                         ' summary="navigation bar">\12<tr>\12'
                         '<td class="toplink" style="text-align:left; width:122px;" valign="middle">']
@@ -694,9 +713,9 @@ class HTMLPage:
                                 ' height="40" border="0" align="middle"'
                                 ' src="nextgrey.jpg" alt="next" />'
                                 '</a>')
-        self.toplink.append(
-            '</td>\12<td class="toplink" style="text-align:center;" valign="middle">'
-            + REFERENCE + '</td>\12')
+        # self.toplink.append(
+        #     '</td>\12<td class="toplink" style="text-align:center;" valign="middle">'
+        #    + REFERENCE + '</td>\12')
         if self.contents is not None:
             self.toplink.append('<td class="toplink" style="text-align:right;"'
                                 ' valign="middle"><a class="internal" href="'

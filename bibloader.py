@@ -18,11 +18,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-__update__ = "2014-12-06"
-
-
 import re
 from utility import deep_update
+
+
+__update__ = "2016-01-09"
 
 
 def strip_texcmds(tex):
@@ -352,6 +352,56 @@ def XMP_metadata(entry, entryname=""):
 
     xmp.extend(['</rdf:RDF>', '</x:xmpmeta>', '<?xpacket end="r"?>'])
     return "\n".join(xmp)
+
+
+# Taugt wegen der geschweiften Klammern in der folgenden Form
+# noch nicht für str.format() !!!
+TEMPLATE_SCHEMA_ARTICLE = """<script type="application/ld+json">
+    {
+      "@context": "http://schema.org",
+      "@graph": [
+        {
+            "@id": "#issue",
+            "@type": "PublicationIssue",
+            "issueNumber": "{Number}",
+            "datePublished": "{year}",
+            "isPartOf": {
+                "@id": "#periodical",
+                "@type": [
+                    "PublicationVolume",
+                    "Periodical"
+                ],
+                "name": "Cataloging & Classification Quarterly",
+                "issn": [
+                    "{Issn}"
+                ],
+                "volumeNumber": "{Volume}",
+                "publisher": "{Publisher}"
+            }
+        },
+        {
+            "@type": "ScholarlyArticle",
+            "isPartOf": "#issue",
+            "description": "{Abstract}",
+            "sameAs": "http://dx.doi.org/{Doi}",
+            "about": [
+                "Works",
+                "Catalog"
+            ],
+            "pageStart": {PageStart},
+            "pageEnd": "{PageEnd}",
+            "name": "{Title}",
+            "author": "{Author}"
+        }
+      ]
+    }
+    </script>
+"""
+
+
+def schema_org_metadata(entry):
+    # TODO: Add schema.org metadata generation for bibtex entries
+    pass
 
 
 def bibtex_loader(data, metadata, bibentry_to_strs=bib_strings):
