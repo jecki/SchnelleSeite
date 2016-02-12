@@ -1123,8 +1123,8 @@ class TexParser:
         HTMLPageHead = re.sub(r"\$author",
                               re.sub("\\n|(<.*?>)", " ", REFERENCE),
                               HTMLPageHead)
-        HTMLPageHead = re.sub(r"\$description", DESCRIPTION, HTMLPageHead)
-        HTMLPageHead = re.sub(r"\$keywords", KEYWORDS, HTMLPageHead)
+        HTMLPageHead = re.sub(r"\$description", DESCRIPTION.replace('"', "'"), HTMLPageHead)
+        HTMLPageHead = re.sub(r"\$keywords", KEYWORDS.replace('"', "'"), HTMLPageHead)
         HTMLPageHead = re.sub(r"\$date", DATE, HTMLPageHead)
         HTMLPageHead = re.sub(r"\$robots", "follow", HTMLPageHead)
         HTMLPageHead = re.sub(
