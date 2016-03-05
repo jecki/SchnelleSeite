@@ -275,22 +275,74 @@ STOCK_WRITERS = [remove_trailing_spaces,
 # preprocessors
 #
 
-STOCK_PREPROCESSORS = {}
+STOCK_PREPROCESSORS = {}    # preprocessors to be used for production code
+DEBUG_PREPROCESSORS = {}    # preprocessors to be used while debugging
 
 try:
-    subprocess.check_output(["lessc", "--help"])
+    dump = subprocess.check_output(["yuicompressor", "--help"],
+                                   stderr=subprocess.STDOUT)
 
-    def less_preprocessor(src, dst):
+    def css_compressor(src, dst):
+        """Minifies a css stylesheet with yuicompressor
+        (https://github.com/yui/yuicompressor) at location `src` and writes
+        the result to `dst`. Returns the destination path.
+        """
+        css = subprocess.check_output(["yuicompressor", src],
+                                      stderr=subprocess.STDOUT)
+        with open(dst, "wb") as css_file:
+            css_file.write(css)
+        return dst
+
+    STOCK_PREPROCESSORS[".css"] = css_compressor
+
+except FileNotFoundError:
+    pass
+
+
+try:
+    dump = subprocess.check_output(["closure", "--help"])
+
+    def js_compressor(src, dst):
+        """Minifies a javascript file with the closure compiler
+        (https://developers.google.com/closure/compiler/) at location `src`
+        and writes the result to `dst`. Returns the destination path.
+        """
+        if src.find(".min.") < 0:
+            jsmin = subprocess.check_output(["closure", src])
+        else:
+            with open(src, "rb") as f:
+                jsmin = f.read()
+        with open(dst, "wb") as jsmin_file:
+            jsmin_file.write(jsmin)
+        return dst
+
+    STOCK_PREPROCESSORS[".js"] = js_compressor
+
+
+except FileNotFoundError:
+    pass
+
+
+try:
+    dump = subprocess.check_output(["lessc", "--help"])
+
+    def less_preprocessor(src, dst, debug):
         """Preprocesses less stylesheet with less.js (http://lesscss.org/) at
-        location src and writes the result to 'dst'.
+        location src and writes the result to 'dst'. Resturns the destination
+        path.
         """
         css = subprocess.check_output(["lessc", "", src])
         dst_name = os.path.splitext(dst)[0] + '.css'
         with open(dst_name, "wb") as css_file:
             css_file.write(css)
+        if not debug and ".css" in STOCK_PREPROCESSORS:
+            dst_name = STOCK_PREPROCESSORS[".css"](dst_name, dst_name)
         return dst_name
 
-    STOCK_PREPROCESSORS[".less"] = less_preprocessor
+    STOCK_PREPROCESSORS[".less"] = \
+        lambda src, dst: less_preprocessor(src, dst, False)
+    DEBUG_PREPROCESSORS[".less"] = \
+        lambda src, dst: less_preprocessor(src, dst, True)
 
 except FileNotFoundError:
     pass
@@ -316,6 +368,7 @@ if ".less" not in STOCK_PREPROCESSORS:
             return dst_name
 
         STOCK_PREPROCESSORS[".less"] = lesscpy_preprocessor
+        DEBUG_PREPROCESSORS[".less"] = lesscpy_preprocessor
 
     except ImportError:
         pass
@@ -455,4 +508,7 @@ def generate_site(path, metadata):
     """Generates the site from the source at 'path'.
     """
     tree = scan_directory(path, loader.STOCK_LOADERS, metadata)
-    create_site(tree, os.path.join(path, '__site'), metadata, STOCK_WRITERS)
+    preprocessors = DEBUG_PREPROCESSORS if metadata.get("debug", False) \
+        else STOCK_PREPROCESSORS
+    create_site(tree, os.path.join(path, '__site'), metadata, STOCK_WRITERS,
+                preprocessors)

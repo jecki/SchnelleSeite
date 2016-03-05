@@ -77,31 +77,31 @@ images = {"next.jpg": b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x
 # Background: f4ecd8
 
 CSSStylesheet = '''
-@import url(https://fonts.googleapis.com/css?family=Crimson+Text:400,700,400italic,700italic);
+/* @import url(https://fonts.googleapis.com/css?family=Crimson+Text:400,700,400italic,700italic); */
 
 body { max-width: 760px; min-width: 320px;
        margin-left:auto; margin-right:auto;
        padding-left: 16px; padding-right: 16px;
-       font-size:1.5em; line-height:1.4em; }
+       font-size:1.5em; line-height:1.5em; }
 
 
 @media screen and (max-width: 480px) {
-    body { font-size:1.3em; line-height:1.25em; }
+    body { font-size:1.3em; line-height:1.3em; }
     h1 { font-size:1.45em; }
 }
 
 a,h1,h2,h3,h4,h5,div,td,th,address,blockquote,nobr, a.internal, figcaption {
-    font-family:"Liberation Sans", Arial, Helvetica, sans-serif;
+    font-family:"Computer Modern Sans", "Liberation Sans", Arial, Helvetica, sans-serif;
 }
 
-p.citeinfo { font-family:"Lucida Console", Monaco, monospace;
+p.citeinfo { font-family: "Computer Modern Typewriter", "Lucida Console", Monaco, monospace;
              font-size:0.75em; line-height:1.3em; }
 
 pre, code { font-size:0.8em; line-height:1.4em; }
 
 p,ul,ol,li,dd,dt,dl, blockquote, a.bibref {
-    font-family: "Crimson Text", "Century SchoolBook URW", Garamond, Georgia, Times, serif;
-    letter-spacing: -0.01em; }
+    font-family: "Computer Modern Serif", "Crimson Text", "Century SchoolBook URW", Garamond, Georgia, Times, serif;
+}
 
 a.external {
     font-size: 0.95em;
@@ -292,6 +292,10 @@ HTMLPageTail = '''
 </body>
 
 </html>
+
+<link rel="stylesheet" href="../../css/cmun-serif.css" />
+<link rel="stylesheet" href="../../css/cmun-sans.css" />
+<link rel="stylesheet" href="../../css/cmun-typewriter.css" />
 
 '''
 

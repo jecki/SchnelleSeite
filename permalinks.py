@@ -47,7 +47,7 @@ def visible_permalink(heading, target, metadata):
         metadata (dictionary): The metadata of the current page. If the key
              "permalink_sign" is present, then it's value is taken as the
              permalink marker, otherwise "&infin;" serves as the default.
-    
+
     Returns:
         string. The heading as HTML snippet with the (perma-)link added.
     """
@@ -67,10 +67,10 @@ def silent_permalink(heading, target, metadata):
         heading (string): The heading as HTML snippet, e.g. "<h1>Heading</h1>"
         target (string): The targent of the permalink. Usually this is the
              same as the id-attribute of the heading.
-        metadata (dictionary): The metadata of the current page. 
-    
+        metadata (dictionary): The metadata of the current page.
+
     Returns:
-        string. The heading as HTML snippet with the (perma-)link added.    
+        string. The heading as HTML snippet with the (perma-)link added.
     """
     tp = translate("permalink", metadata)
     start = heading.find(">") + 1
@@ -82,7 +82,7 @@ def silent_permalink(heading, target, metadata):
     else:
         atag = heading.find("</a>") + 4
         assert atag < end, "no room for silent permalink here:" + heading
-        
+
     link = SILENT_PERMALINK.format(target=target, tooltip=tp)
     return heading[:start] + link + heading[start:end] + '</a>' + heading[end:]
 
