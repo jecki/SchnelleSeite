@@ -293,7 +293,8 @@ try:
             css_file.write(css)
         return dst
 
-    STOCK_PREPROCESSORS[".css"] = css_compressor
+    # the yuivompressor seems to falsify css !!!
+    # STOCK_PREPROCESSORS[".css"] = css_compressor
 
 except FileNotFoundError:
     pass
