@@ -279,22 +279,21 @@ STOCK_PREPROCESSORS = {}    # preprocessors to be used for production code
 DEBUG_PREPROCESSORS = {}    # preprocessors to be used while debugging
 
 try:
-    dump = subprocess.check_output(["yuicompressor", "--help"],
+    dump = subprocess.check_output(["cleancss", "--help"],
                                    stderr=subprocess.STDOUT)
 
     def css_compressor(src, dst):
-        """Minifies a css stylesheet with yuicompressor
-        (https://github.com/yui/yuicompressor) at location `src` and writes
-        the result to `dst`. Returns the destination path.
+        """Minifies a css stylesheet with cleancss
+        (https://github.com/jakubpawlowicz/clean-css) at location `src` and
+        writes the result to `dst`. Returns the destination path.
         """
-        css = subprocess.check_output(["yuicompressor", src],
+        css = subprocess.check_output(["cleancss", src],
                                       stderr=subprocess.STDOUT)
         with open(dst, "wb") as css_file:
             css_file.write(css)
         return dst
 
-    # the yuivompressor seems to falsify css !!!
-    # STOCK_PREPROCESSORS[".css"] = css_compressor
+    STOCK_PREPROCESSORS[".css"] = css_compressor
 
 except FileNotFoundError:
     pass
