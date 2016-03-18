@@ -212,9 +212,15 @@ def bib_strings(entry, lang):
         bib_short = ("{Editor} (" + eds(entry) +
                      "): {Booktitle}, {Publisher} " +
                      "{Address} {Year}.").format(**entry_dict)
+        if "Pages" in entry_dict:
+            bib_full = bib_full[:-1] + ", {Pages}.".format(**entry_dict)
+            bib_short = bib_short[:-1] + ", {Pages}.".format(**entry_dict)
 
     elif entry["type"] == "Article":
-        tmpl = "{Journal} {Year}, {Pages}"
+        if "Number" in entry:
+            tmpl = "{Journal} {Number}/{Year}, {Pages}"
+        else:
+            tmpl = "{Journal} {Year}, {Pages}"
         if "Doi" in entry:
             tmpl += ", DOI: {Doi}"
         if "Url" in entry and len(entry["Url"]) < 80:
