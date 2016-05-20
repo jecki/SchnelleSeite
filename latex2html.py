@@ -110,8 +110,8 @@ a.external {
 @media screen and (min-width: 680px) {
     p,ul,ol,li,dl,dd,dt, a.internal, a.bibref {
         text-align:justify;
-        font-feature-settings: "liga";
-        font-variant-ligatures: common-ligatures;
+        /* font-feature-settings: "liga";
+        font-variant-ligatures: common-ligatures; */
     }
 }
 
