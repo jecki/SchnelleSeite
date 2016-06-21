@@ -18,6 +18,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+# TODO: Add COINS support!
+
 import re
 from utility import deep_update
 
@@ -153,13 +155,15 @@ trans_table["EN"] = {
     "Ed": "Ed.",
     "Eds": "Eds.",
     "ed_by": "ed. by",
-    "in": "in:"
+    "in": "in:",
+    "preprint": "preprint"
 }
 trans_table["DE"] = {
     "Ed": "Hrsg.",
     "Eds": "Hrsg.",
     "ed_by": "hrsg. von",
-    "in": "in:"
+    "in": "in:",
+    "preprint": "Vordruck"
 }
 
 
@@ -273,7 +277,7 @@ BLACK_LIST = {"timestamp", "bib_short", "bib_full", "owner",
 
 
 def citation_metadata(entry, entryname=""):
-    """Converst a bibtex entry in a very rough way to highwire citation
+    """Converts a bibtex entry in a very rough way to highwire citation
     metadata.
     """
     replace_list = {"journal": "journal_title", "number": "issue"}
