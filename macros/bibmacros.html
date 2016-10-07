@@ -1,11 +1,11 @@
 {% macro BibInfo(entry) -%}
 <div class="bibinfo">
-<span class="bi_pretext">{{'Published'|TR}}: </span><span class="bi_entry">{{('_bibdata'|DATA(entry)).bib_short[language]}}</span>
+<span class="bi_pretext">{{'Published'|TR}}: </span><span class="bi_entry">{{('_bibdata'|DATA(entry|LOWER)).bib_short[language]}}</span>
 </div>
 {%- endmacro %}
 
 {% macro BibFullInfo(pretext, entry) -%}
 <div class="bibinfo">
-<span class="bi_pretext">{{pretext}}</span> <span class="bi_entry">{{('_bibdata'|DATA(entry)).bib_full[language]}}</span>
+<span class="bi_pretext">{{pretext}}</span> <span class="bi_entry">{{('_bibdata'|DATA(entry|LOWER)).bib_full[language]}}</span>
 </div>
 {%- endmacro %}

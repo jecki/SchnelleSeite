@@ -34,6 +34,22 @@ def strip_texcmds(tex):
     return re.sub(r"\\\\\S+\s|\\\\\S", "", tex.replace("\\&", "&"))
 
 
+def end_of_block(text, pos):
+    """Return the position of the closing '}' starting from pos
+    """
+    assert text[pos] == '{'
+    cnt = 1;  i = pos
+    while cnt > 0:
+        k = text.find('{', i + 1)
+        i = text.find('}', i + 1)
+        if k >= 0 and k < i:
+            cnt += 1
+            i = k
+        else:
+            cnt -= 1
+    return i
+
+
 class ParserError(Exception):
 
     """An error that occurred during Parsing."""
@@ -87,7 +103,7 @@ class BibTeXParser(object):
     def parse_value(self):
         """Parses and returns the value of a field in a bibtex-entry."""
         self.assert_token("{")
-        i = self.text.find("}", self.pos)
+        i = end_of_block(self.text, self.pos)
         self.assert_cond(i >= 0, "'}' expected after %s..." %
                          self.text[self.pos:self.pos + 6])
         value = strip_texcmds(self.text[self.pos + 1:i])
@@ -98,8 +114,13 @@ class BibTeXParser(object):
         """Parses one field in a bibtex-entry and returns a dictionary of the
         field name and value."""
         i = self.text.find("=", self.pos)
-        self.assert_cond(i >= 0, "'=' expected after field name")
-        field_name = self.text[self.pos:i].strip()
+        k = self.text.find('}', self.pos)
+        if k >= 0 and k < i:
+            return {}
+        self.assert_cond(i >= 0, "'=' expected after field name: " + self.text[self.pos:])
+        field_name = self.text[self.pos:i].strip().lower()
+        if field_name == 'journal':
+            field_name == 'journal_title'
         self.pos = i + 1
         self.consume_blanks()
         value = self.parse_value()
@@ -127,10 +148,13 @@ class BibTeXParser(object):
         i = self.text.find("{", self.pos)
         self.assert_cond(i >= 0, "'{' expected after entry type")
         entry_type = self.text[self.pos + 1:i]
+        if entry_type.lower() == 'comment':
+            self.pos = end_of_block(self.text, i) + 1
+            return {}
         self.pos = i + 1
         i = self.text.find(",", self.pos)
         self.assert_cond(i >= 0, "',' expected after entry name")
-        entry_name = self.text[self.pos:i].strip()
+        entry_name = self.text[self.pos:i].strip().lower()
         self.pos = i
         fields = self.parse_all_fields()
         fields["type"] = entry_type
@@ -176,74 +200,78 @@ def bib_strings(entry, lang):
         or just one editor in entry.
         """
         if ("Editor" in entry and
-            (entry["Editor"].find("and") >= 0 or
-             entry["Editor"].find(",") >= 0)):
+            (entry["editor"].find("and") >= 0 or
+             entry["editor"].find(",") >= 0)):
             return "{Eds}"
         else:
             return "{Ed}"
 
-    entry_dict = {"Address": "", "Publisher": ""}
+    entry_dict = {"address": "", "publisher": ""}
     entry_dict.update(entry)
     entry_dict.update(trans_table[lang])
 
     # special patch
-    if entry_dict.get('Pages') == "forthcoming" and lang.upper() == "DE":
-        entry_dict['Pages'] = "im Erscheinen"
+    if entry_dict.get('pages') == "forthcoming" and lang.upper() == "DE":
+        entry_dict['pages'] = "im Erscheinen"
 
     if entry["type"] == "Book":
-        if "Author" in entry and "Editor" in entry:
-            bib_full = "{Author}: {Title}, {ed_by} {Editor}," \
-                " {Publisher} {Address} {Year}.".format(**entry_dict)
-            bib_short = "{ed_by} {Editor}," \
-                " {Publisher} {Address} {Year}.".format(**entry_dict)
+        if "author" in entry and "editor" in entry:
+            bib_full = "{author}: {title}, {ed_by} {editor}," \
+                " {publisher} {address} {year}.".format(**entry_dict)
+            bib_short = "{ed_by} {editor}," \
+                " {publisher} {address} {year}.".format(**entry_dict)
         elif "Editor" in entry:
-            bib_full = ("{Editor} (" + eds(entry) + "): {Title}" +
-                        ", {Publisher} {Address} {Year}.") \
+            bib_full = ("{editor} (" + eds(entry) + "): {title}" +
+                        ", {publisher} {address} {year}.") \
                 .format(**entry_dict)
-            bib_short = "{Publisher} {Address} {Year}."\
+            bib_short = "{publisher} {address} {year}."\
                 .format(**entry_dict)
         else:
-            bib_full = "{Author}: {Title}, {Publisher} " \
-                "{Address} {Year}.".format(**entry_dict)
-            bib_short = "{Publisher} {Address} {Year}." \
+            bib_full = "{author}: {title}, {publisher} " \
+                "{address} {year}.".format(**entry_dict)
+            bib_short = "{publisher} {address} {year}." \
                 .format(**entry_dict)
 
     elif entry["type"] in ["InCollection", "InProceedings"]:
-        bib_full = ("{Author}: {Title}, {in} {Editor}"
-                    "(" + eds(entry) + "): {Booktitle}, " +
-                    "{Publisher} {Address} {Year}.") \
+        bib_full = ("{author}: {title}, {in} {editor}"
+                    "(" + eds(entry) + "): {booktitle}, " +
+                    "{publisher} {address} {year}.") \
             .format(**entry_dict)
-        bib_short = ("{Editor} (" + eds(entry) +
-                     "): {Booktitle}, {Publisher} " +
-                     "{Address} {Year}.").format(**entry_dict)
-        if "Pages" in entry_dict:
-            bib_full = bib_full[:-1] + ", {Pages}.".format(**entry_dict)
-            bib_short = bib_short[:-1] + ", {Pages}.".format(**entry_dict)
+        bib_short = ("{editor} (" + eds(entry) +
+                     "): {booktitle}, {publisher} " +
+                     "{address} {year}.").format(**entry_dict)
+        if "pages" in entry_dict:
+            bib_full = bib_full[:-1] + ", {pages}.".format(**entry_dict)
+            bib_short = bib_short[:-1] + ", {pages}.".format(**entry_dict)
 
-    elif entry["type"] == "Article":
-        if "Number" in entry:
-            tmpl = "{Journal} {Number}/{Year}, {Pages}"
+    elif entry["type"] == "article":
+        if "number" in entry:
+            tmpl = "{journaltitle} {number}/{year}"
         else:
-            tmpl = "{Journal} {Year}, {Pages}"
-        if "Doi" in entry:
-            tmpl += ", DOI: {Doi}"
-        if "Url" in entry and len(entry["Url"]) < 80:
-            tmpl += ', URL: <a href="{Url}">{Url}</a>'
+            tmpl = "{journaltitle} {year}"
+        if 'pages' in entry_dict:
+            tmpl += ', {pages}'
+        if "doi" in entry:
+            tmpl += ", DOI: {doi}"
+        if "url" in entry and len(entry["url"]) < 80:
+            tmpl += ', URL: <a href="{url}">{url}</a>'
         tmpl += "."
-        bib_full = ("{Author}: {Title}, {in} " + tmpl) \
+        bib_full = ("{author}: {title}, {in} " + tmpl) \
             .format(**entry_dict)
         bib_short = tmpl.format(**entry_dict)
 
     elif entry["type"] == "Proceedings":
-        bib_full = ("{Editor} (" + eds(entry) + "): {Title}, {Publisher} " +
-                    "{Address} {Year}.").format(**entry_dict)
-        bib_short = "{Publisher} {Address} {Year}." \
+        bib_full = ("{editor} (" + eds(entry) + "): {title}, {publisher} " +
+                    "{address} {year}.").format(**entry_dict)
+        bib_short = "{publisher} {address} {year}." \
             .format(**entry_dict)
 
     else:  # fallback option
-        bib_full = "{Author}: {Title}, {Publisher} " \
-            "{Address} {Year}.".format(**entry_dict)
-        bib_short = "{Publisher} {Address} {Year}." \
+        if 'author' not in entry_dict:
+            entry_dict['author'] = entry_dict['editor']
+        bib_full = "{author}: {title}, {publisher} " \
+            "{address} {year}.".format(**entry_dict)
+        bib_short = "{publisher} {address} {year}." \
             .format(**entry_dict)
 
     return {"bib_short": {lang: bib_short}, "bib_full": {lang: bib_full}}

@@ -164,6 +164,20 @@ def jinja2_split(env, s, ch):
     return s.split(ch)
 
 
+@jinja2.environmentfilter
+def jinja2_lower(env, s):
+    """Converts string `s` to lowercase letters.
+    """
+    return s.lower()
+
+
+@jinja2.environmentfilter
+def jinja2_upper(env, s):
+    """Converts string `s` to lowercase letters.
+    """
+    return s.upper()
+
+
 ##############################################################################
 #
 # jinja2 loader
@@ -216,6 +230,8 @@ def jinja2_loader(text, metadata):
     env.filters['TARGET_PAGE'] = jinja2_targetpage
     env.filters['MARKDOWNIFY'] = jinja2_markdownify
     env.filters['SPLIT'] = jinja2_split
+    env.filters['LOWER'] = jinja2_lower
+    env.filters['UPPER'] = jinja2_upper
     env.filters['basename'] = jinja2_filepath_basename
     env.filters['ext'] = jinja2_filepath_ext
     templ = env.get_template("")
