@@ -180,15 +180,39 @@ trans_table["EN"] = {
     "Eds": "Eds.",
     "ed_by": "ed. by",
     "in": "in:",
-    "preprint": "preprint"
+    "preprint": "preprint",
+    "and": "and"
 }
 trans_table["DE"] = {
     "Ed": "Hrsg.",
     "Eds": "Hrsg.",
     "ed_by": "hrsg. von",
     "in": "in:",
-    "preprint": "Vordruck"
+    "preprint": "Vordruck",
+    "and": "und"
 }
+
+
+def author(entry, lang):
+    """Returns the author's or the editor's name in a form suitable for
+    `(author year)` quotation, e.g. `Bill Clinton and Barack Obama` will become
+    `Clinton and Obama`. if there are more than three names only the
+    first name will be picked and ` et al.` will be appended.
+    """
+    def familiy_name(name):
+        if name.find(',') >= 0:
+            return name.split(',')[0].strip()
+        else:
+            return name.split(' ')[-1].strip()
+        
+    name_field =  entry['author'] if 'author' in entry else entry['editor']
+    names = name_field.split(' and ')
+    name = family_name(names[0])
+    if len(names) > 2:
+        name += ' et al. '
+    elif len(names) == 2:
+        name += ' ' + trans_table[lang]['and'] + ' ' + family_name(names[1])
+    return name
 
 
 def bib_strings(entry, lang):
