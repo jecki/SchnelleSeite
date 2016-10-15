@@ -1058,7 +1058,7 @@ TermWSequence = TermPSequence + [r"", r"\footnote{",  # r"\caption{"
 
 KnownTokens = [r"\begin{", r"\end{", r"\bibitem{", r"\label{",
                r"\ref{", r"\pageref{", r"\bibliographystyle{", r"\nocite{",
-               r"\url{", r"\cline{"]
+               r"\url{", r"\cline{", r"\href{"]
 
 FontMarkers = ["em", "bf", "it", "tt", "small", "tiny", "scriptsize",
                "footnotesize", "normalsize", "large", "Large", "Huge", "high"]
@@ -1218,7 +1218,6 @@ class TexParser:
                     i -= 1
                 elif s[0:1] == "{":
                     i += 1
-
         return token
 
     def interpretFontType(self, ltxStr):
@@ -1403,12 +1402,18 @@ class TexParser:
                         link.replace("http://", "") + '</a>'
                     print("URL: ", link)
                 elif self.token[1:5] == "href":
-                    print("HREF: " + self.token)
                     target = self.token[6:-1]
                     self.token = self.getToken()
-                    text = "".join(self.sequenceOfWords())
+                    self.token = self.getToken()
+                    tl = []
+                    while self.token != "}":
+                        tl.append(self.token)
+                        self.token = self.getToken()
+                    text = "".join(tl)
+                    print("HREF: " + target + "; " + text)
                     s += '<a class="external" href="' + target + '">' + \
                          text + '</a>'
+
                 elif self.token[1:6] == "cline":
                     rng = self.token[7:-1].split("-")
                     # print("CLINE: " + str(rng))
