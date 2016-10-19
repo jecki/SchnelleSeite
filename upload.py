@@ -637,4 +637,18 @@ def connect(cfg_filename, cfg_section):
         raise ValueError("unknown protokol %s. Should be one of %" %
                          (protocol, str(list(PROTOCOLS.values()))))
 
+    
+def save_log(name, log):
+    """Saves an upload log dictionary as YAML file.
+    """
+    t = datetime.datetime.now().isoformat()
+    tstmp = t[0:10].replace("-", "") + t[10:16].replace(":", "")
+    filename = name + "-" + tstmp + ".log"
+    with open(filename, "w") as f:
+        timestamp = str(datetime.datetime.now())
+        f.write("# log created " + timestamp[:timestamp.find(".")] + "\n")
+        for key in log:
+            f.write("\n" + key + ":\n")
+            for entry in sorted(list(log[key])):
+                f.write("  - " + entry + "\n")
 
