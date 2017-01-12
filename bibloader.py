@@ -119,8 +119,8 @@ class BibTeXParser(object):
             return {}
         self.assert_cond(i >= 0, "'=' expected after field name: " + self.text[self.pos:])
         field_name = self.text[self.pos:i].strip().lower()
-        if field_name == 'journal':
-            field_name == 'journal_title'
+        # if field_name == 'journal':
+        #     field_name == 'journal_title'
         self.pos = i + 1
         self.consume_blanks()
         value = self.parse_value()
@@ -268,19 +268,20 @@ def bib_strings(entry, lang):
             bib_full = bib_full[:-1] + ", {pages}.".format(**entry_dict)
             bib_short = bib_short[:-1] + ", {pages}.".format(**entry_dict)
 
-    elif entry["type"] == "article":
+    elif entry["type"] == "Article":
         if "number" in entry:
-            tmpl = "{journaltitle} {number}/{year}"
+            tmpl = "{journal} {number}/{year}"
         else:
-            tmpl = "{journaltitle} {year}"
+            tmpl = "{journal} {year}"
         if 'pages' in entry_dict:
             tmpl += ', {pages}'
+        tmpl_full = ""
         if "doi" in entry:
-            tmpl += ", DOI: {doi}"
+            tmpl_full += ", DOI: {doi}"
         if "url" in entry and len(entry["url"]) < 80:
-            tmpl += ', URL: <a href="{url}">{url}</a>'
+            tmpl_full += ', URL: <a href="{url}">{url}</a>'
         tmpl += "."
-        bib_full = ("{author}: {title}, {in} " + tmpl) \
+        bib_full = ("{author}: {title}, {in} " + tmpl + tmpl_full) \
             .format(**entry_dict)
         bib_short = tmpl.format(**entry_dict)
 

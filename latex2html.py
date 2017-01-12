@@ -245,7 +245,7 @@ body { max-width: 680px; min-width: 320px;
 
 
 @media screen and (max-width: 480px) {
-    body { font-size:1.2em; line-height:1.75em; }
+    body { font-size:1.2em; line-height:1.5em; }
     h1 { font-size:1.45em; }
 }
 
