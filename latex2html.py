@@ -241,7 +241,7 @@ body { max-width: 680px; min-width: 320px;
        margin-left:auto; margin-right:auto;
        padding-left: 16px; padding-right: 16px;
        font-size:1.35em; line-height:1.75em; 
-       background-color:#f2f0ea; }
+       background-color:#fcfbf7; }
 
 
 @media screen and (max-width: 480px) {
@@ -289,7 +289,7 @@ p, ul, ol, li, dd, dt   {
     -moz-hyphens: auto;
     -ms-hyphens: auto;
     -webkit-hyphens: auto;
-    color:#44230C;
+    color:#33180A;
 }
 
 h1, h2, h3, h4, h5, h6 {
