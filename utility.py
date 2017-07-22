@@ -18,6 +18,7 @@ limitations under the License.
 
 import contextlib
 import datetime
+import hashlib
 import os
 import re
 import shutil
@@ -244,3 +245,13 @@ def set_attributes(data, pos, attributes):
     attr_str = " " + " ".join(attr_list) + " "
     data = data[:start] + attr_str + data[endpos:]
     return data
+
+
+def md5(*txt):
+    """Returns the md5-checksum for `txt`. This can be used to test if
+    some piece of text, for example a grammar source file, has changed.
+    """
+    md5_hash = hashlib.md5()
+    for t in txt:
+        md5_hash.update(t.encode('utf8'))
+    return md5_hash.hexdigest()

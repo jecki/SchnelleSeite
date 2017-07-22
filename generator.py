@@ -331,8 +331,8 @@ try:
         location src and writes the result to 'dst'. Resturns the destination
         path.
         """
-        css = subprocess.check_output(["lessc", "", src])
         dst_name = os.path.splitext(dst)[0] + '.css'
+        css = subprocess.check_output(["lessc", "", src])
         with open(dst_name, "wb") as css_file:
             css_file.write(css)
         if not debug and ".css" in STOCK_PREPROCESSORS:
@@ -497,6 +497,7 @@ def create_site(root, site_path, metadata, writers=STOCK_WRITERS,
 
             f.write('</urlset>\n\n')
 
+
 ##############################################################################
 #
 # main function
@@ -510,5 +511,11 @@ def generate_site(path, metadata):
     tree = scan_directory(path, loader.STOCK_LOADERS, metadata)
     preprocessors = DEBUG_PREPROCESSORS if metadata.get("debug", False) \
         else STOCK_PREPROCESSORS
+    assert os.path.isdir(path)
+    sitepath = os.path.join(path, '__site')
+    if not os.path.exists(sitepath):
+        os.mkdir(sitepath)
+    else:
+        assert os.path.isdir(sitepath)
     create_site(tree, os.path.join(path, '__site'), metadata, STOCK_WRITERS,
                 preprocessors)
