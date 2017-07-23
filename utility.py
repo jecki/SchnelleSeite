@@ -139,8 +139,9 @@ def copytree_on_condition(src, dst, cond, preprocessors={}, sitemap=[]):
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
         if os.path.isdir(srcname):
-            copytree_on_condition(srcname, dstname, cond, preprocessors,
-                                  sitemap)
+            if not name.startswith('_'):    # TODO: this should already be excluded at tree scanning stage!
+                copytree_on_condition(srcname, dstname, cond, preprocessors,
+                                      sitemap)
         else:
             copy_on_condition(srcname, dstname, cond, preprocessors, sitemap)
     shutil.copystat(src, dst)
