@@ -9,3 +9,7 @@ __pycache__
 /nbproject/
 /nbproject
 nbproject
+*.ini
+.vscode
+.mypy_cache
+*_old
