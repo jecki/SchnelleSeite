@@ -304,7 +304,7 @@ def peep_lang(filename, md_loader=yaml_loader, delimiter="+++"):
 
     if os.path.isdir(filename):
         return False
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="utf-8") as f:
         line = f.readline()
         while line:
             if line.rstrip() == delimiter:
@@ -555,7 +555,7 @@ def load(filepath,
 
     metadata_headers = []
     data_chunks = []
-    with open(filepath, "r") as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         if is_completing_loader(data_loader):
             return collections.OrderedDict([(
                 injected_metadata['basename'],

@@ -44,7 +44,7 @@ def create_tree(path, tree):
         if isinstance(tree[key], dict):
             create_tree(fullpath, tree[key])
         else:
-            with open(fullpath, "w") as f:
+            with open(fullpath, "w", encoding="utf-8") as f:
                 f.write(tree[key])
 
 
@@ -57,7 +57,7 @@ def read_tree(path):
         if os.path.isdir(fullpath):
             tree[entry] = read_tree(fullpath)
         else:
-            with open(fullpath, "r") as f:
+            with open(fullpath, "r", encoding="utf-8") as f:
                 tree[entry] = f.read()
     return tree
 
@@ -79,7 +79,7 @@ def retrieve_tree(wrapper, path):
                 tree[entry] = retrieve_tree(wrapper, descendant)
             else:
                 wrapper.download(descendant, tmpfilename)
-                with open(tmpfilename, "r") as f:
+                with open(tmpfilename, "r", encoding="utf-8") as f:
                     tree[entry] = f.read()
         if os.path.exists(tmpfilename):
             os.remove(tmpfilename)
@@ -240,7 +240,7 @@ class TestFSWrapper(unittest.TestCase):
         self.assertTrue(self.ftp.isfile(fname))
 
         self.ftp.download(fname, alt_local_path)
-        with open(alt_local_path, "r") as f:
+        with open(alt_local_path, "r", encoding="utf-8") as f:
             data = f.read()
         self.assertEqual(data, self.files[fname])
         os.remove(alt_local_path)
@@ -264,10 +264,10 @@ class TestFSWrapper(unittest.TestCase):
         self.ftp.upload(local_path, os.path.join(dir_name, alt_name))
         self.assertTrue(self.ftp.isfile(os.path.join(dir_name, alt_name)))
 
-        with open(alt_local_path, "w") as f:
+        with open(alt_local_path, "w", encoding="utf-8") as f:
             f.write("Überschreib Test: Das hier sollte nicht zu lesen sein!")
         self.ftp.download(os.path.join(dir_name, alt_name), alt_local_path)
-        with open(alt_local_path, "r") as f:
+        with open(alt_local_path, "r", encoding="utf-8") as f:
             data = f.read()
         self.assertEqual(data, self.files[fname])
         os.remove(alt_local_path)

@@ -2,7 +2,7 @@ SchnelleSeite README
 ====================
 
 SchnelleSeite is a static site generator, similar to Jekyll or Hugo but with
-dedicated support for multilingual sites. 
+dedicated support for multilingual sites.
 
 
 Copyright and License

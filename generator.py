@@ -267,8 +267,8 @@ def add_img_width_height(root, content):
     # TODO: program this function
     pass
 
-STOCK_WRITERS = [remove_trailing_spaces,
-                 fillin_URL_templates]
+
+STOCK_WRITERS = [remove_trailing_spaces, fillin_URL_templates]
 
 
 #
@@ -435,12 +435,12 @@ def create_site(root, site_path, metadata, writers=STOCK_WRITERS,
                         # only overwrite generated files if changes occured
                         compare = ""
                         if os.path.isfile(entryname):
-                            with open(entryname, "r") as f:
+                            with open(entryname, "r", encoding="utf-8") as f:
                                 compare = f.read()
 
                         # speed this up with generating and saving hash values?
                         if compare != content:
-                            with open(entryname, "w") as f:
+                            with open(entryname, "w", encoding="utf-8") as f:
                                 print("Writing file " + entryname)
                                 f.write(content)
 
@@ -456,7 +456,7 @@ def create_site(root, site_path, metadata, writers=STOCK_WRITERS,
                                         "alt_locs": alt_locs,
                                         "lastmod": utility.isodate(entryname),
                                         "changefreq": cfreq,
-                                        "priority":  "%1.1f" % float(pri)})
+                                        "priority": "%1.1f" % float(pri)})
 
     shutil.copy2(metadata.get('config', {}).get('root_index', '__root.html'),
                  os.path.join(site_path, "index.html"))

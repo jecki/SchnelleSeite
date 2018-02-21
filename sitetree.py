@@ -91,7 +91,7 @@ class Entry(dict):
 
     def __delitem__(self, key):
         dict.__delitem__(self, key)
-        if not len(self):
+        if len(self) == 0:
             self.__content_type = ""
 
     def is_page(self):

@@ -164,6 +164,48 @@ class AbstractConnectionWrapper:
             self._rmtree(path)
 
 
+class NILProxy(AbstractConnectionWrapper):
+
+    def __init__(self, connection):
+        self.connection = connection
+
+    def close(self):
+        self.connection.close()
+
+    def isFileSystem(self):
+        return self.connection.isFileSystem()
+
+    def fullpath(self, path):
+        return self.connection.fullpath(path)
+
+    def listdir_attr(self, path):
+        if self.connection.isdir(path):
+            return self.connection.listdir_attr(path)
+        else:
+            return []
+
+    def upload(self, local_path, remote_path):
+        assert os.path.exists(local_path)
+
+    def download(self, remote_path, local_path):
+        shutil.copy2(self.fullpath(remote_path), local_path)
+
+    def remove(self, path):
+        pass
+
+    def mkdir(self, path):
+        pass
+
+    def rmdir(self, path):
+        pass
+
+    def _rmtree(self, path):
+        pass
+
+    def rmtree(self, path, keep_topdir=False):
+        pass
+
+
 class FileSystemWrapper(AbstractConnectionWrapper):
 
     def __init__(self, root):
@@ -225,7 +267,7 @@ class FileSystemWrapper(AbstractConnectionWrapper):
     def rmdir(self, path):
         os.rmdir(self.fullpath(path))
 
-    def _rmtree(self, path):
+    def _rmtree(self, path, keep_topdir=False):
         shutil.rmtree(self.fullpath(path))
 
 
@@ -431,49 +473,6 @@ class SFTPWrapper(AbstractConnectionWrapper):
 #
 ##############################################################################
 
-class NILProxy(AbstractConnectionWrapper):
-
-    def __init__(self, connection):
-        self.connection = connection
-
-    def close(self):
-        self.connection.close()
-
-    def isFileSystem(self):
-        return self.connection.isFileSystem()
-
-    def fullpath(self, path):
-        return self.connection.fullpath(path)
-
-    def listdir_attr(self, path):
-        if self.connection.isdir(path):
-            return self.connection.listdir_attr(path)
-        else:
-            return []
-
-    def upload(self, local_path, remote_path):
-        assert os.path.exists(local_path)
-        pass
-
-    def download(self, remote_path, local_path):
-        shutil.copy2(self.fullpath(remote_path), local_path)
-
-    def remove(self, path):
-        pass
-
-    def mkdir(self, path):
-        pass
-
-    def rmdir(self, path):
-        pass
-
-    def _rmtree(self, path):
-        pass
-
-    def rmtree(self, path, keep_topdir=False):
-        pass
-
-
 def upload_tree(local, local_path, remote, remote_path, delete=False,
                 logger=lambda msg: 0):
     assert local.isFileSystem()
@@ -534,9 +533,10 @@ def upload_tree(local, local_path, remote, remote_path, delete=False,
                             raise IOError("Can't overwrite dir %s with file" %
                                           dst_path)
                     remote.upload(local.fullpath(src_path), dst_path)
-                    log('uploaded', dst_path + " %f %f %i %s" %
-                        (local_time, remote_time, local_dict[entry].st_size,
-                         remote_dict[entry].st_size))
+                    log('uploaded', dst_path) 
+                        # + " %f %f %i %s" %
+                        # (local_time, remote_time, local_dict[entry].st_size,
+                        #  remote_dict[entry].st_size))
                 else:
                     log('skipped', dst_path)
             else:
