@@ -13,3 +13,4 @@ nbproject
 .vscode
 .mypy_cache
 *_old
+.idea

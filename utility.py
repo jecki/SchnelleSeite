@@ -18,10 +18,12 @@ limitations under the License.
 
 import contextlib
 import datetime
+import fnmatch
 import hashlib
 import os
 import re
 import shutil
+from typing import Iterable
 
 
 ##############################################################################
@@ -39,6 +41,64 @@ def deep_update(dest_dict, with_dict):
         else:
             dest_dict[k] = with_dict[k]
 
+
+##############################################################################
+#
+# sitemap handling
+#
+##############################################################################
+
+class Sitemap(list):
+    """Class Sitemap is a list of dictionaries that will be written to the
+    sitemap.xml file. Other than a simple list, it receives a list of
+    fnmatch-patterns (e.g. "secrets/*") to exclude files that should not be
+    added to the sitemap."""
+
+    def __init__(self, exclude_patterns: list):
+        super().__init__()
+        self.exclude_patterns = exclude_patterns
+
+    def append(self, entry: dict):
+        assert isinstance(entry, dict)
+        if any(fnmatch.fnmatch(entry['loc'], pattern)
+               for pattern in self.exclude_patterns):
+            print('Entry "%s" excluded from sitmap.' % entry['loc'])
+        else:
+            assert not 'video' in entry['loc'], str(self.exclude_patterns)
+            super().append(entry)
+
+    def extend(self, iterable: Iterable):
+        for entry in iterable:
+            self.append(entry)
+
+    def write(self, filename, base_url):
+        """Writes the sitemap in xml form to a file named ``filename``"""
+        self.sort(key=lambda item: item['loc'])
+        with open(filename, 'w') as f:
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n <urlset '
+                    'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+                    'xmlns:xhtml="http://www.w3.org/1999/xhtml">\n')
+
+            f.write('<url>\n<loc>' + base_url + '/index.html</loc>\n'
+                    '<lastmod>' + isodate('index.html') + '</lastmod>'
+                    '\n<changefreq>yearly</changefreq>\n'
+                    '<priority>0.1</priority>\n</url>\n')
+
+            for entry in self:
+                alt_locs_xml = [('<xhtml:link rel="alternate" '
+                                 'hreflang="{lang}" '
+                                 'href="' + base_url + '/{loc}" />').
+                                format(**alt) for alt in entry['alt_locs']]
+
+                f.write('<url>\n'
+                        '<loc>' + base_url + "/" + entry['loc'] + '</loc>\n' +
+                        "\n".join(alt_locs_xml) +
+                        '\n<lastmod>' + entry['lastmod'] + '</lastmod>\n'
+                        '<changefreq>' + entry['changefreq'] + '</changefreq>'
+                        '\n<priority>' + entry['priority'] + '</priority>\n'
+                        '</url>\n')
+
+            f.write('</urlset>\n\n')
 
 ##############################################################################
 #

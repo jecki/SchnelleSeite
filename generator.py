@@ -398,7 +398,7 @@ def create_site(root, site_path, metadata, writers=STOCK_WRITERS,
             programm.
     """
     assert isinstance(root, sitetree.Folder)
-    sitemap = []
+    sitemap = utility.Sitemap(metadata.get('config', {}).get('sitemap_exclude', []))
     all_languages = root.metadata.get('config', {}).get('languages', ['ANY'])
 
     def create_static_entries(root, path):
@@ -470,32 +470,8 @@ def create_site(root, site_path, metadata, writers=STOCK_WRITERS,
         assert base_url[-1:] != "/"
 
         print("Writing sitemap.xml")
-        sitemap.sort(key=lambda item: item['loc'])
-        with open('sitemap.xml', 'w') as f:
-            f.write('<?xml version="1.0" encoding="UTF-8"?>\n <urlset '
-                    'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
-                    'xmlns:xhtml="http://www.w3.org/1999/xhtml">\n')
+        sitemap.write('sitemap.xml', base_url)
 
-            f.write('<url>\n<loc>' + base_url + '/index.html</loc>\n'
-                    '<lastmod>' + utility.isodate('index.html') + '</lastmod>'
-                    '\n<changefreq>yearly</changefreq>\n'
-                    '<priority>0.1</priority>\n</url>\n')
-
-            for entry in sitemap:
-                alt_locs_xml = [('<xhtml:link rel="alternate" '
-                                 'hreflang="{lang}" '
-                                 'href="' + base_url + '/{loc}" />').
-                                format(**alt) for alt in entry['alt_locs']]
-
-                f.write('<url>\n'
-                        '<loc>' + base_url + "/" + entry['loc'] + '</loc>\n' +
-                        "\n".join(alt_locs_xml) +
-                        '\n<lastmod>' + entry['lastmod'] + '</lastmod>\n'
-                        '<changefreq>' + entry['changefreq'] + '</changefreq>'
-                        '\n<priority>' + entry['priority'] + '</priority>\n'
-                        '</url>\n')
-
-            f.write('</urlset>\n\n')
 
 
 ##############################################################################
