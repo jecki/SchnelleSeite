@@ -44,6 +44,17 @@ def deep_update(dest_dict, with_dict):
 
 ##############################################################################
 #
+# html meta data
+#
+##############################################################################
+
+RX_META = re.compile(
+    r'<meta\s+name\s*=\s*"(?P<name>.*?)"\s+content\s*=\s*"(?P<content>.*?)"\s*/?>',
+    re.IGNORECASE)
+
+
+##############################################################################
+#
 # sitemap handling
 #
 ##############################################################################
@@ -64,7 +75,24 @@ class Sitemap(list):
                for pattern in self.exclude_patterns):
             print('Entry "%s" excluded from sitmap.' % entry['loc'])
         else:
-            assert not 'video' in entry['loc'], str(self.exclude_patterns)
+            filetype = entry['loc'][-5:].lower()
+            if filetype == '.html' or filetype[-4:] == '.htm':
+                try:
+                    with open(entry['loc'], 'r', encoding='utf-8') as f:
+                        page = f.read()
+                except FileNotFoundError as e:
+                    # dirty hack
+                    if not re.match(r'[A-Z][A-Z]/', entry['loc']):
+                        raise e
+                    with open(entry['loc'][3:], 'r', encoding='utf-8') as f:
+                        page = f.read()
+                for meta in RX_META.finditer(page):
+                    if meta['name'].upper() == "ROBOTS" \
+                            and meta['content'].upper().find('NOINDEX') >= 0:
+                        print('Entry "%s" excluded from sitemap, because '
+                              'meta tag "ROBOTS" contains "NOINDEX"!'
+                              % entry['loc'])
+                        return
             super().append(entry)
 
     def extend(self, iterable: Iterable):
