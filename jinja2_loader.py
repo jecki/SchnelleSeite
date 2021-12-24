@@ -35,7 +35,7 @@ def jinja2_current_date():
     return time.strftime('%Y-%m-%d')
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_translate(env, expression):
     """Translates expression within the given jinja2 environment.
 
@@ -45,7 +45,7 @@ def jinja2_translate(env, expression):
     return sitetree.translate(expression, env.globals)
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_targetpage(env, target):
     """Returns the page basename (without ".html") of a link target.
     E.g. "authors.html#Shakespeare" yields "authors"
@@ -53,7 +53,7 @@ def jinja2_targetpage(env, target):
     return (target.split("#")[0]).split(".")[0]
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_linktarget(env, target):
     """Makes sure that target is a proper link target."""
     parts = target.split("#")
@@ -62,28 +62,28 @@ def jinja2_linktarget(env, target):
     return "#".join(parts)
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_getcontent(env, datasource):
     """Returns the content of a data source."""
     return sitetree.getentry(env.globals['local'], datasource,
                              env.globals['language'])['content']
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_getmetadata(env, datasource, key):
     """Returns a particular item from the metadata of an entry."""
     return sitetree.getentry(env.globals['local'], datasource,
                              env.globals['language'])['metadata'][key]
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_getitem(env, datasource, key):
     """Returns a paritcular item from a data source that is a dictionary."""
     return sitetree.getitem(key, env.globals['local'], datasource,
                             env.globals['language'])
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_fragments(env, directory, orderby=None):
     """Returns a list of pathnames pathnames (starting from directory) of all
     fragments in a directory.
@@ -103,7 +103,7 @@ def jinja2_fragments(env, directory, orderby=None):
     return sitetree.collect_fragments(folder, directory, order)
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_multicast_pagename(env, subpage):
     """Returns the basename of the output page on which a particular subpage
     appears.
@@ -126,14 +126,14 @@ def other_lang_URL(folder, basename, lang):
     return "/".join(path)
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_other_lang_URL(env, lang):
     """Returns the URL to a different language version of the current page.
     """
     return other_lang_URL(env.globals['local'], env.globals['basename'], lang)
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_markdownify(env, text):
     """Runs 'text' through a markdown processor and returns the resultant
     html.
@@ -141,7 +141,7 @@ def jinja2_markdownify(env, text):
     return markdown.markdown(text)
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_filepath_basename(env, filepath):
     """Returns the base name, i.e. the filename w/o path and extension, of
     'filepath'. Note the semantics of this filter differ from
@@ -150,28 +150,28 @@ def jinja2_filepath_basename(env, filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_filepath_ext(env, filename):
     """Returns the extension of filename.
     """
     return os.path.splitext(filename)[1]
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_split(env, s, ch):
     """Splits string 's' with character 'ch' as delimiter into a list of parts.
     """
     return s.split(ch)
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_lower(env, s):
     """Converts string `s` to lowercase letters.
     """
     return s.lower()
 
 
-@jinja2.environmentfilter
+@jinja2.pass_environment
 def jinja2_upper(env, s):
     """Converts string `s` to lowercase letters.
     """

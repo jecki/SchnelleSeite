@@ -204,11 +204,15 @@ def remove_locale(name):
     assert name.find(os.path.sep) == -1
     pos = name.rfind(".")
     basename = name[:pos] if pos >= 0 else name
-    try:
-        locale = get_locale(basename)
-        if locale:
-            return (basename[:-len(locale) - 1] +
-                    (name[pos:] if pos >= 0 else ""))
-    except LocaleError:
-        pass
+    locale = get_locale(basename)
+    if locale:
+        return (basename[:-len(locale) - 1] +
+                (name[pos:] if pos >= 0 else ""))
+    # try:
+    #     locale = get_locale(basename)
+    #     if locale:
+    #         return (basename[:-len(locale) - 1] +
+    #                 (name[pos:] if pos >= 0 else ""))
+    # except LocaleError:
+    #     pass
     return name

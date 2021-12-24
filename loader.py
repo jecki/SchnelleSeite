@@ -17,6 +17,7 @@ limitations under the License.
 
 
 import collections
+import collections.abc
 import csv
 import functools
 import inspect
@@ -36,7 +37,7 @@ from permalinks import permalinks
 import sitetree
 
 
-__update__ = "2015-03-07"
+__update__ = "2021-12-23"
 
 
 ###############################################################################
@@ -62,9 +63,9 @@ def completing_loader(loader_func):
     """
     @functools.wraps(loader_func)
     def wrapper(filename, metadata):
-        assert isinstance(metadata, collections.Mapping)
+        assert isinstance(metadata, collections.abc.Mapping)
         entry = loader_func(filename, metadata)
-        assert isinstance(entry, collections.Mapping)
+        assert isinstance(entry, collections.abc.Mapping)
         if isinstance(entry, sitetree.Entry):
             return entry
         else:

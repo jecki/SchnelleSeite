@@ -25,7 +25,7 @@ class TestCopyFuncs(unittest.TestCase):
         shutil.rmtree('testdata/test_sitetree')
 
     def test_is_newer(self):
-        time.sleep(1)
+        time.sleep(0.1)
         with open('testdata/test_sitetree/fileC.txt', "w") as f:
             f.write("fileC")
         self.assertTrue(is_newer('testdata/test_sitetree/fileC.txt',
@@ -42,6 +42,7 @@ class TestCopyFuncs(unittest.TestCase):
                                  'testdata/test_sitetree/fileC.txt'))
 
     def test_copy_on_condition(self):
+        time.sleep(0.1)
         ALT_TEXT = "fileC alternative version"
         with open('testdata/test_sitetree/fileC.txt', "w") as f:
             f.write(ALT_TEXT)

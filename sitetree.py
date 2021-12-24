@@ -18,6 +18,7 @@ limitations under the License.
 
 
 import collections
+import collections.abc
 import os
 
 import locale_strings
@@ -67,12 +68,12 @@ class Entry(dict):
         """Guarded __setitem__ to ensure that only valid entry data is added
         to the dictionary."""
         locale_strings.valid_locale(key, raise_error=True)
-        if not isinstance(value, collections.Mapping):
+        if not isinstance(value, collections.abc.Mapping):
             raise ValueError("Not a dictionary: %s" % str(value))
         elif set(value.keys()) != {'metadata', 'content'}:
             illegal_keys = set(value.keys()) - {'metadata', 'content'}
             raise ValueError("Illegal key(s): %s" % str(illegal_keys))
-        elif not isinstance(value['metadata'], collections.Mapping):
+        elif not isinstance(value['metadata'], collections.abc.Mapping):
             raise ValueError("metadata must be dictionary type not %s" %
                              type(value['metadata']))
         else:
@@ -114,7 +115,7 @@ class Entry(dict):
         data in form of a dictionary.
         """
         return (self.is_data() and
-                isinstance(self['content'], collections.Mapping))
+                isinstance(self['content'], collections.abc.Mapping))
 
     def bestmatch(self, lang):
         """Returns a specific language version of the entry or an acceptable
@@ -253,7 +254,7 @@ def getitem(key, folder, source, lang):
     or there is no best match for 'lang' in 'source'.
     """
     content = getentry(folder, source, lang)['content']
-    if not isinstance(content, collections.Mapping):
+    if not isinstance(content, collections.abc.Mapping):
         raise ValueError("Mapping type instead of %s expected in %s" %
                          (type(content), source))
     try:
