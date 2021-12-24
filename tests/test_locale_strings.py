@@ -35,7 +35,8 @@ class TestLocaleStrings(unittest.TestCase):
         # don't remove locales if filename only consists of a locale
         self.assertEqual(remove_locale("_EN.txt"), "_EN.txt")
         # raise an error for false locales
-        self.assertRaises(LocaleError, remove_locale, "test_US.txt")
+        # errors will only be raised on get_locale, but not on remove_locale, any more
+        # self.assertRaises(LocaleError, remove_locale, "test_US.txt")
 
     def test_extract_locale(self):
         self.assertEqual(extract_locale("alpha/beta_DE/gamma.txt"), "DE")
