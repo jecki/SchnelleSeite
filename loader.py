@@ -91,7 +91,7 @@ def markdown_loader(text, metadata):
 def yaml_loader(text, metadata):
     """A loader function for yaml."""
     if text:
-        return yaml.load(text)
+        return yaml.load(text, Loader=yaml.FullLoader)
     else:
         return {}
 

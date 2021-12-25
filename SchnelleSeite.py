@@ -66,7 +66,7 @@ def make_project(path):
 
     # read config file
     with open(os.path.join(SITE_PATH, "__site-config.yaml")) as cfg_file:
-        cfg = yaml.load(cfg_file)
+        cfg = yaml.load(cfg_file, Loader=yaml.FullLoader)
     if 'template_paths' in cfg:
         cfg['template_paths'].extend(config['template_paths'])
         config['template_paths'] = cfg['template_paths']
