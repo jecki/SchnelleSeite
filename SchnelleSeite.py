@@ -75,6 +75,10 @@ def make_project(path):
         config['static_entries'] = list(set(config['static_entries']) |
                                         set(cfg['static_entries']))
         del cfg['static_entries']
+    if 'include' in cfg:
+        generator.include_patterns.extend(cfg['include'])
+    if 'exclude' in cfg:
+        generator.exclude_patterns.extend(cfg['exclude'])
     overlap = set(config.keys()) & set(cfg.keys())
     if overlap:
         raise ValueError("Illegal keys in '__site-config': {0!s}".

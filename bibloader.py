@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 """bibloader.py - A loader for bibtex bibliography databases
 
